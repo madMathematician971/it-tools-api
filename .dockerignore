@@ -1,0 +1,24 @@
+# Ignore virtual environment created by uv
+.venv
+
+# Ignore Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore OS-specific files
+.DS_Store
+
+# Ignore editor configuration
+.vscode/
+.idea/
+
+# Ignore build artifacts
+dist/
+*.egg-info/
+build/
+
+# Ignore test reports
+.pytest_cache/
+htmlcov/
+.coverage 

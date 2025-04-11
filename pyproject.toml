@@ -1,0 +1,156 @@
+[project]
+name = "it-tools-api"
+version = "0.1.0"
+description = "API for IT Tools"
+authors = [
+    { name = "Your Name", email = "you@example.com" },
+]
+dependencies = [
+    # Core dependencies
+    "fastapi>=0.109.0,<1.0.0",
+    "uvicorn[standard]>=0.27.0,<1.0.0",
+    "pydantic>=2.6.0,<3.0.0",
+    "python-multipart>=0.0.7",
+    "setuptools>=69.0.0", # For pkg_resources
+    # Tool-specific libraries
+    "bcrypt>=4.0.0,<5.0.0",
+    # "bip39>=0.0.2", # Replaced with mnemonic
+    "mnemonic>=0.20", # For BIP39 mnemonic generation
+    "case-converter>=1.0.2",
+    "colour>=0.1.5",
+    "croniter>=2.0.0",
+    "cron-descriptor>=1.4.0",
+    "python-dateutil>=2.8.2",
+    "docker-compose-parser>=0.0.5",
+    "cryptography>=42.0.0",
+    "schwifty>=2023.10.0", # Using latest version with updated exception names
+    "python-jose[cryptography]>=3.3.0", # For JWT parsing/validation
+    "lorem-text>=2.1", # For Lorem Ipsum generation
+    "markdown>=3.5.0", # For Markdown to HTML conversion
+    "simpleeval>=0.9.13", # For safe math expression evaluation
+    "phonenumbers>=8.13.25",
+    "qrcode[pil]>=7.4.0",
+    "python-slugify>=8.0.1", # For slug generation
+    "sqlparse>=0.4.4", # For SQL formatting
+    "pyfiglet>=1.0.0", # For ASCII art generation
+    "user-agents>=2.2.0", # For User-Agent parsing
+    "ulid-py>=1.1.0", # For ULID generation
+    "mac-vendor-lookup>=0.1.12",
+    "pyotp>=2.9.0", # For OTP generation/validation
+    "zxcvbn-python>=4.4.24",
+    "pypdf>=4.0.0", # For basic PDF parsing
+    "pyhanko>=0.22.0", # For PDF signature validation
+    "requests>=2.31.0", # For HTTP requests
+    "pillow>=10.0.0", # For image processing (usually required by qrcode)
+    "toml>=0.10.2", # For TOML parsing/generation
+    "xmltodict>=0.13.0", # For XML parsing/generation
+    "deepdiff>=6.0.0,<7.0.0", # For JSON diffing
+]
+requires-python = ">=3.12"
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "freezegun>=1.5.1",
+    "httpx>=0.28.1",
+    "isort>=6.0.1",
+    "pylint>=3.3.6",
+    "pytest>=8.3.5",
+    "pytest-asyncio", # For pytest asyncio support
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.pylint.main]
+max-line-length = 120
+disable = [
+    "too-many-arguments",
+    "not-callable",
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "raw-checker-failed",
+    "bad-inline-option",
+    "locally-disabled",
+    "file-ignored",
+    "suppressed-message",
+    "useless-suppression",
+    "deprecated-pragma",
+    "use-symbolic-message-instead",
+    "too-few-public-methods",
+    "too-many-branches",
+    "too-many-statements",
+    "missing-docstring",
+    "fixme",
+    "dangerous-default-value",
+    "unspecified-encoding",
+    "use-list-literal",
+    "use-dict-literal",
+    "duplicate-code",
+    "logging-fstring-interpolation",
+    "too-many-locals",
+    "import-error",
+    "no-name-in-module",
+    "protected-access",
+    "too-many-instance-attributes",
+    "invalid-name",
+    "no-member",
+    "unused-variable",
+    "property-with-parameters",
+    "unused-argument",
+    "no-else-return",
+    "inconsistent-return-statements",
+    "too-many-lines",
+    "line-too-long",
+    "redefined-outer-name",
+    "too-many-public-methods",
+    "broad-exception-caught",
+    "raise-missing-from",  # W0707
+    "too-many-boolean-expressions",  # R0916
+    "too-many-return-statements",  # R0911
+    "too-many-positional-arguments",  # R0917
+    "too-many-nested-blocks",  # R1702
+    "consider-using-in",  # R1714
+    "unsubscriptable-object",  # E1136
+    "unsupported-membership-test",  # E1135
+    "consider-using-max-builtin",  # R1731
+    "f-string-without-interpolation",  # W1309
+    "no-else-break",  # R1723
+    "broad-exception-raised",  # W0719
+]
+extension-pkg-whitelist = [
+    "pydantic"  # Silence errors for pydantic due to its dynamic attributes
+]
+
+[tool.pylint.similarities]
+min-similarity-lines = 6
+ignore-comments = "yes"
+ignore-docstrings = "yes"
+ignore-imports = "yes"
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+line_length = 120
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.pytest.ini_options]
+markers = [
+    "asyncio: mark a test as asynchronous.",
+]
+asyncio_default_fixture_loop_scope = "function"
