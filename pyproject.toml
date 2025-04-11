@@ -3,7 +3,7 @@ name = "it-tools-api"
 version = "0.1.0"
 description = "API for IT Tools"
 authors = [
-    { name = "Your Name", email = "you@example.com" },
+    { name = "Anton Dmytrenko", email = "48_decorum.row@icloud.com" },
 ]
 dependencies = [
     # Core dependencies

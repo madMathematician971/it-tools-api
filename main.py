@@ -73,9 +73,9 @@ app = FastAPI(
     title="IT Tools API (Python)",
     description="Standalone API replicating IT Tools functionality.",
     version="0.1.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
 )
 
 
@@ -84,13 +84,6 @@ app = FastAPI(
 async def health_check():
     """Check if the API is running."""
     return {"status": "ok", "message": "API is running"}
-
-
-# --- Root Endpoint ---
-@app.get("/", tags=["Health"], status_code=status.HTTP_200_OK)
-async def root():
-    """Root endpoint for health checks."""
-    return {"status": "ok", "message": "IT Tools API is running"}
 
 
 # --- Include Tool Routers ---
