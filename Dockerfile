@@ -1,6 +1,9 @@
 # Use the official Python 3.12 slim image
 FROM python:3.12-slim
 
+# Set Python to run in unbuffered mode
+ENV PYTHONUNBUFFERED=1
+
 # Install uv
 RUN pip install uv
 
@@ -13,7 +16,7 @@ COPY pyproject.toml .
 # Install production dependencies system-wide
 # --system installs to the global python environment
 # --no-dev avoids installing development dependencies
-RUN uv sync --system --no-dev
+RUN uv sync --no-dev --no-build
 
 # Copy the application code
 COPY main.py .
