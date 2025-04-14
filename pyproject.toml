@@ -45,6 +45,7 @@ dependencies = [
     "toml>=0.10.2", # For TOML parsing/generation
     "xmltodict>=0.13.0", # For XML parsing/generation
     "deepdiff>=6.0.0,<7.0.0", # For JSON diffing
+    "mcp[cli]>=1.6.0",
 ]
 requires-python = ">=3.12"
 readme = "README.md"
