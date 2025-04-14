@@ -1,4 +1,3 @@
-import re  # !pylint: disable=unused-import
 import pytest
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
