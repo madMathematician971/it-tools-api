@@ -5,7 +5,7 @@ from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 
 from models.hmac_models import HmacInput, HmacOutput
-from routers.hmac_router import HASH_ALGOS
+from mcp_server.tools.hmac_calculator import HASH_ALGOS
 from routers.hmac_router import router as hmac_router
 
 
