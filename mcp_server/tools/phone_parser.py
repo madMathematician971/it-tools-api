@@ -40,6 +40,7 @@ def parse_phone_number(phone_number_string: str, default_country: str | None = N
             national_number: National number portion
             extension: Any extension in the number
             number_type: Type of number (mobile, fixed line, etc.)
+            country_code_source: Source of the country code detection
             e164_format: E.164 format (+14155552671)
             national_format: National format (415-555-2671)
             international_format: International format (+1 415-555-2671)
@@ -55,13 +56,13 @@ def parse_phone_number(phone_number_string: str, default_country: str | None = N
         is_valid = is_valid_number(parsed)
 
         if not is_possible and not is_valid:  # If not even possible, definitely not valid
-            return {"is_valid": False, "error": "Number is not possible.", "parsed_number": str(parsed)}
+            return {"is_valid": False, "error": "Number is not valid.", "parsed_number": str(parsed)}
 
         # If possible but not strictly valid, return specific error
         if not is_valid:
             return {
                 "is_valid": False,
-                "error": "Number is possible but not valid (e.g., incorrect length/format for region).",
+                "error": "Number is not valid.",
                 "parsed_number": str(parsed),
             }
 
@@ -92,6 +93,8 @@ def parse_phone_number(phone_number_string: str, default_country: str | None = N
             PhoneNumberType.UNKNOWN: "Unknown",
         }
         number_type_desc = type_map.get(type_code, "Unknown")
+        # Get country code source
+        cc_source = str(parsed.country_code_source)
 
         return {
             "is_valid": True,
@@ -100,6 +103,7 @@ def parse_phone_number(phone_number_string: str, default_country: str | None = N
             "national_number": national_num,
             "extension": ext,
             "number_type": number_type_desc,
+            "country_code_source": cc_source,
             "e164_format": e164,
             "national_format": national,
             "international_format": international,
