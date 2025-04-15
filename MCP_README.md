@@ -426,6 +426,25 @@ result = await session.call_tool("calculate_symbolic_chmod", {
 # result: {"symbolic_chmod": "rwxr-xr-x", "error": null}
 ```
 
+### Color Converter
+
+Convert colors between various formats (hex, rgb, hsl, web names).
+
+**Tool Name:** `convert_color`
+
+**Parameters:**
+- `input_color`: Color string (e.g., "#ff0000", "red", "hsl(0, 100%, 50%)"). Works best with hex or web names.
+- `target_format`: Desired output format (e.g., "hex", "rgb", "hsl", "web", "luminance").
+
+**Example:**
+```python
+result = await session.call_tool("convert_color", {
+    "input_color": "#336699",
+    "target_format": "rgb"
+})
+# result: {"result": "rgb(51, 102, 153)", "input_color": "#336699", "target_format": "rgb", "parsed_hex": "#336699", "parsed_rgb": "rgb(51, 102, 153)", "parsed_hsl": "hsl(210, 50%, 40%)", "error": null}
+```
+
 ## Available Resources
 
 ### Base Converter Resource
