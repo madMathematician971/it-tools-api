@@ -9,6 +9,7 @@ from mcp_server.tools.bip39_generator import generate_bip39_mnemonic
 from mcp_server.tools.case_converter import convert_case
 from mcp_server.tools.chmod_calculator import calculate_numeric_chmod, calculate_symbolic_chmod
 from mcp_server.tools.color_converter import convert_color
+from mcp_server.tools.cron_parser import describe_cron, validate_cron
 from mcp_server.tools.hash_calculator import calculate_hash
 from mcp_server.tools.hmac_calculator import calculate_hmac
 from mcp_server.tools.ipv4_subnet_calculator import calculate_ipv4_subnet

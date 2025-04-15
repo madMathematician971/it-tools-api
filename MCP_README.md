@@ -445,6 +445,51 @@ result = await session.call_tool("convert_color", {
 # result: {"result": "rgb(51, 102, 153)", "input_color": "#336699", "target_format": "rgb", "parsed_hex": "#336699", "parsed_rgb": "rgb(51, 102, 153)", "parsed_hsl": "hsl(210, 50%, 40%)", "error": null}
 ```
 
+### Cron Descriptor
+
+Get a human-readable description of a 5-field cron string.
+Validates both 5 and 6-field strings but only describes the 5-field standard.
+
+**Tool Name:** `describe_cron`
+
+**Parameters:**
+- `cron_string`: The cron expression (e.g., "*/5 * * * *", "0 9 * * MON-FRI").
+
+**Example:**
+```python
+result = await session.call_tool("describe_cron", {
+    "cron_string": "0 9 * * 1-5"
+})
+# result: {"description": "At 09:00 AM, Monday through Friday", "error": null}
+
+result = await session.call_tool("describe_cron", {
+    "cron_string": "* * * * * *" # 6-field input
+})
+# result: {"description": "Valid 6-field cron string (includes seconds). Description only provided for 5-field standard.", "error": null}
+```
+
+### Cron Validator
+
+Validate a cron string (5 or 6 fields) and get the next 5 predicted run times.
+
+**Tool Name:** `validate_cron`
+
+**Parameters:**
+- `cron_string`: The cron expression (e.g., "0 0 * * 0", "*/10 * * * * *").
+
+**Example:**
+```python
+result = await session.call_tool("validate_cron", {
+    "cron_string": "0 0 * * SUN"
+})
+# result: {"is_valid": true, "next_runs": ["2024-...\T00:00:00+00:00", ...], "error": null}
+
+result = await session.call_tool("validate_cron", {
+    "cron_string": "invalid"
+})
+# result: {"is_valid": false, "next_runs": null, "error": "Invalid cron string format."}
+```
+
 ## Available Resources
 
 ### Base Converter Resource

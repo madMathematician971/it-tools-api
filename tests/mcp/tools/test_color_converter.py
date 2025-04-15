@@ -63,7 +63,8 @@ def test_convert_color_success(input_color, target_format, expected, parsed_vals
     elif target_format == "rgb_fraction":
         # Need to parse the tuple string for comparison
         try:
-            actual_tuple = eval(result["result"])  # eval is generally unsafe, but ok for trusted test output
+            # eval is generally unsafe, but ok for trusted test output
+            actual_tuple = eval(result["result"])  # pylint: disable=eval-used
             expected_tuple = Color(input_color).rgb
             assert len(actual_tuple) == 3
             assert all(approx_equal(a, e) for a, e in zip(actual_tuple, expected_tuple))
