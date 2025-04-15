@@ -72,8 +72,8 @@ async def test_generate_uuid_success(client: TestClient, version: int):
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             "input should be less than or equal to 4",
         ),  # Pydantic validation
-        (2, status.HTTP_400_BAD_REQUEST, "Unsupported UUID version: 2"),  # Endpoint logic
-        (3, status.HTTP_400_BAD_REQUEST, "Unsupported UUID version: 3"),  # Endpoint logic
+        (2, status.HTTP_400_BAD_REQUEST, "Unsupported UUID version for this endpoint: 2"),
+        (3, status.HTTP_400_BAD_REQUEST, "Unsupported UUID version for this endpoint: 3"),
         (
             "abc",
             status.HTTP_422_UNPROCESSABLE_ENTITY,
