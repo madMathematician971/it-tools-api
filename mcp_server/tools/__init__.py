@@ -2,9 +2,12 @@
 MCP tools for IT Tools API.
 """
 
-# Import all tools so they can be imported directly from mcp.tools
-from mcp_server.tools.base_converter import base_convert
 from mcp_server.tools.base64_converter import base64_decode_string, base64_encode_string
+from mcp_server.tools.base_converter import base_convert
+from mcp_server.tools.basic_auth_generator import generate_basic_auth_header
+from mcp_server.tools.bip39_generator import generate_bip39_mnemonic
+from mcp_server.tools.case_converter import convert_case
+from mcp_server.tools.chmod_calculator import calculate_numeric_chmod, calculate_symbolic_chmod
 from mcp_server.tools.hash_calculator import calculate_hash
 from mcp_server.tools.hmac_calculator import calculate_hmac
 from mcp_server.tools.ipv4_subnet_calculator import calculate_ipv4_subnet

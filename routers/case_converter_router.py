@@ -1,61 +1,53 @@
-import caseconverter
+import logging
+
 from fastapi import APIRouter, HTTPException, status
 
+from mcp_server.tools.case_converter import convert_case
 from models.case_converter_models import CaseConvertInput, CaseConvertOutput
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/case", tags=["Case Converter"])
 
 
 @router.post("/convert", response_model=CaseConvertOutput)
-async def case_convert(payload: CaseConvertInput):
-    """Convert string to a specified case."""
+async def case_convert_endpoint(payload: CaseConvertInput):
+    """Convert string to a specified case using the tool."""
     try:
-        # Use functions directly from caseconverter (without underscores)
-        supported_cases = {
-            "camel": caseconverter.camelcase,
-            "snake": caseconverter.snakecase,
-            "pascal": caseconverter.pascalcase,
-            "constant": caseconverter.macrocase,  # constant_case -> macrocase
-            "kebab": caseconverter.kebabcase,
-            "capital": caseconverter.titlecase,
-            # Removed unsupported cases for v1.2.0
-            # "dot": caseconverter.dotcase,
-            # "header": caseconverter.headercase,
-            # "sentence": caseconverter.sentencecase,
-            # "path": caseconverter.pathcase,
-            "lower": lambda s: s.lower(),
-            "upper": lambda s: s.upper(),
-        }
-        target = payload.target_case.lower().replace("-", "_")
+        result = convert_case(input_string=payload.input, target_case=payload.target_case)
 
-        if target not in supported_cases:
+        if result["error"]:
+            # Check for specific user errors from the tool
+            if "Invalid target_case" in result["error"]:
+                logger.warning(f"Invalid target case provided: {payload.target_case}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=result["error"],
+                )
+            if "not supported by the installed caseconverter" in result["error"]:
+                # Handle case where library version might be incompatible (AttributeError in tool)
+                logger.error(f"Case converter tool reported library incompatibility: {result['error']}")
+                raise HTTPException(
+                    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                    detail=f"Case '{payload.target_case}' is not supported by the current library version.",
+                )
+            # Log other tool errors and return a generic 500
+            logger.error(f"Case converter tool returned an unexpected error: {result['error']}")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid target_case. Supported cases: {list(supported_cases.keys())}",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error during case conversion",
             )
 
-        # Check if the function exists before calling
-        conversion_func = supported_cases.get(target)
-        if not conversion_func:
-            # This case should theoretically be caught by the check above, but added for safety
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Case conversion function for '{target}' not found.",
-            )
+        # Tool executed successfully
+        return CaseConvertOutput(result=result["result"])
 
-        result = conversion_func(payload.input)
-        return {"result": result}
-    except AttributeError as e:
-        # Handle cases where a specific function might be missing in the library version
-        print(f"Missing case function in caseconverter: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail=f"Case '{payload.target_case}' is not supported by the current library version.",
-        )
-    except HTTPException as http_exc:
+    except HTTPException as http_exc:  # Re-raise HTTPException for specific error handling above
         raise http_exc
     except Exception as e:
-        print(f"Error converting case: {e}")
+        # Catch any unexpected exceptions during the tool call or processing
+        logger.error(f"Unexpected error in /case/convert endpoint: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error during case conversion",

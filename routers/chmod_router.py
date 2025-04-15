@@ -1,72 +1,95 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, status
 
+from mcp_server.tools.chmod_calculator import calculate_numeric_chmod, calculate_symbolic_chmod
 from models.chmod_models import ChmodNumericInput, ChmodNumericOutput, ChmodSymbolicInput, ChmodSymbolicOutput
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/chmod", tags=["chmod"])
 
 
 @router.post("/calculate-numeric", response_model=ChmodNumericOutput)
-async def chmod_calculate_numeric(payload: ChmodNumericInput):
-    """Calculate the numeric chmod value from owner/group/other permissions."""
+async def chmod_calculate_numeric_endpoint(payload: ChmodNumericInput):
+    """Calculate the numeric chmod value from symbolic permissions using the tool."""
     try:
-        owner_val = (
-            (4 if payload.owner.read else 0) | (2 if payload.owner.write else 0) | (1 if payload.owner.execute else 0)
+        result = calculate_numeric_chmod(
+            owner_read=payload.owner.read,
+            owner_write=payload.owner.write,
+            owner_execute=payload.owner.execute,
+            group_read=payload.group.read,
+            group_write=payload.group.write,
+            group_execute=payload.group.execute,
+            others_read=payload.others.read,
+            others_write=payload.others.write,
+            others_execute=payload.others.execute,
         )
-        group_val = (
-            (4 if payload.group.read else 0) | (2 if payload.group.write else 0) | (1 if payload.group.execute else 0)
-        )
-        others_val = (
-            (4 if payload.others.read else 0)
-            | (2 if payload.others.write else 0)
-            | (1 if payload.others.execute else 0)
-        )
-        numeric_str = f"{owner_val}{group_val}{others_val}"
-        return {"numeric": numeric_str}
+
+        if result["error"]:
+            # Log tool errors and return a generic 500
+            logger.error(f"Chmod numeric tool returned an error: {result['error']}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error during numeric calculation",
+            )
+
+        # Tool executed successfully
+        return ChmodNumericOutput(numeric=result["numeric_chmod"])
+
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as e:
-        print(f"Error calculating numeric chmod: {e}")
+        logger.error(f"Unexpected error in /chmod/calculate-numeric endpoint: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error during numeric calculation",
+            detail="Unexpected internal server error",
         )
 
 
 @router.post("/calculate-symbolic", response_model=ChmodSymbolicOutput)
-async def chmod_calculate_symbolic(payload: ChmodSymbolicInput):
-    """Convert a numeric chmod value (e.g., 755, "755") to symbolic representation."""
+async def chmod_calculate_symbolic_endpoint(payload: ChmodSymbolicInput):
+    """Convert a numeric chmod value to symbolic representation using the tool."""
     try:
-        numeric_str = str(payload.numeric).strip()
-        if len(numeric_str) == 4 and numeric_str.startswith("0"):  # Allow optional leading 0
-            numeric_str = numeric_str[1:]
+        result = calculate_symbolic_chmod(numeric_chmod_string=str(payload.numeric))
 
-        # Pad single digit 0-7 to three digits
-        if len(numeric_str) == 1 and numeric_str.isdigit() and 0 <= int(numeric_str) <= 7:
-            numeric_str = numeric_str.zfill(3)
+        if result["error"]:
+            tool_error_msg = result["error"]
+            # Check for specific user errors from the tool and map them to original API errors
+            if "Numeric value must resolve to 3 digits" in tool_error_msg:
+                logger.warning(
+                    f"Invalid numeric chmod input (format/length): {payload.numeric} - Tool Error: {tool_error_msg}"
+                )
+                # Raise HTTPException with the ORIGINAL expected error message
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid numeric input: Numeric value must be 3 digits (e.g., 755 or 0755) or a single valid digit (0-7).",
+                )
+            if "Each digit must be between 0 and 7" in tool_error_msg:
+                logger.warning(
+                    f"Invalid numeric chmod input (digit range): {payload.numeric} - Tool Error: {tool_error_msg}"
+                )
+                # Raise HTTPException with the ORIGINAL expected error message (which matches tool error here)
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=tool_error_msg,  # Original message matches tool message
+                )
+            # Log other tool errors and return a generic 500
+            logger.error(f"Chmod symbolic tool returned an unexpected error: {tool_error_msg}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error during symbolic calculation",
+            )
 
-        if not numeric_str.isdigit() or len(numeric_str) != 3:
-            raise ValueError("Numeric value must be 3 digits (e.g., 755 or 0755) or a single valid digit (0-7).")
+        # Tool executed successfully
+        return ChmodSymbolicOutput(symbolic=result["symbolic_chmod"])
 
-        owner_val = int(numeric_str[0])
-        group_val = int(numeric_str[1])
-        others_val = int(numeric_str[2])
-
-        if not (0 <= owner_val <= 7 and 0 <= group_val <= 7 and 0 <= others_val <= 7):
-            raise ValueError("Each digit must be between 0 and 7.")
-
-        def get_symbol(val):
-            r = "r" if (val & 4) else "-"
-            w = "w" if (val & 2) else "-"
-            x = "x" if (val & 1) else "-"
-            return f"{r}{w}{x}"
-
-        symbolic_str = f"{get_symbol(owner_val)}{get_symbol(group_val)}{get_symbol(others_val)}"
-        return {"symbolic": symbolic_str}
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid numeric input: {e}",
-        )
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as e:
-        print(f"Error calculating symbolic chmod: {e}")
+        logger.error(f"Unexpected error in /chmod/calculate-symbolic endpoint: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error during symbolic calculation",

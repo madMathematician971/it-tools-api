@@ -325,6 +325,107 @@ result = await session.call_tool("calculate_ipv4_subnet", {
 # result: {"network_address": "192.168.1.0", "broadcast_address": "192.168.1.255", "netmask": "255.255.255.0", ...}
 ```
 
+### Basic Auth Header Generator
+
+Generate a Basic Authentication HTTP header string.
+
+**Tool Name:** `generate_basic_auth_header`
+
+**Parameters:**
+- `username`: The username for authentication.
+- `password`: The password for authentication.
+
+**Example:**
+```python
+result = await session.call_tool("generate_basic_auth_header", {
+    "username": "testuser",
+    "password": "p@ssword"
+})
+# result: {"username": "testuser", "password": "p@ssword", "encoded": "dGVzdHVzZXI6cEBzc3dvcmQ=", "header": "Basic dGVzdHVzZXI6cEBzc3dvcmQ=", "error": null}
+```
+
+### BIP39 Mnemonic Generator
+
+Generate a BIP39 mnemonic seed phrase for cryptocurrency wallets.
+
+**Tool Name:** `generate_bip39_mnemonic`
+
+**Parameters:**
+- `word_count`: Number of words (12, 15, 18, 21, 24).
+- `language`: Language code (e.g., 'en', 'es', 'jp'). Defaults to 'en'.
+
+**Example:**
+```python
+result = await session.call_tool("generate_bip39_mnemonic", {
+    "word_count": 12,
+    "language": "en"
+})
+# result: {"mnemonic": "word1 word2 ... word12", "word_count": 12, "language": "english", "error": null}
+```
+
+### Case Converter
+
+Convert a string to various case formats (camel, snake, pascal, etc.).
+
+**Tool Name:** `convert_case`
+
+**Parameters:**
+- `input_string`: The string to convert.
+- `target_case`: Target case format (e.g., 'camel', 'snake', 'pascal', 'constant', 'kebab', 'capital', 'lower', 'upper').
+
+**Example:**
+```python
+result = await session.call_tool("convert_case", {
+    "input_string": "hello world",
+    "target_case": "pascal"
+})
+# result: {"result": "HelloWorld", "error": null}
+```
+
+### Chmod Calculator (Numeric from Symbolic)
+
+Calculate the numeric (octal) chmod value from individual permission settings.
+
+**Tool Name:** `calculate_numeric_chmod`
+
+**Parameters:**
+- `owner_read`: Owner read permission (bool).
+- `owner_write`: Owner write permission (bool).
+- `owner_execute`: Owner execute permission (bool).
+- `group_read`: Group read permission (bool).
+- `group_write`: Group write permission (bool).
+- `group_execute`: Group execute permission (bool).
+- `others_read`: Others read permission (bool).
+- `others_write`: Others write permission (bool).
+- `others_execute`: Others execute permission (bool).
+
+**Example:**
+```python
+result = await session.call_tool("calculate_numeric_chmod", {
+    "owner_read": True, "owner_write": True, "owner_execute": False,
+    "group_read": True, "group_write": False, "group_execute": True,
+    "others_read": True, "others_write": False, "others_execute": False
+})
+# result: {"numeric_chmod": "654", "error": null}
+```
+
+### Chmod Calculator (Symbolic from Numeric)
+
+Convert a numeric chmod value (e.g., "755", "644") to its symbolic representation.
+
+**Tool Name:** `calculate_symbolic_chmod`
+
+**Parameters:**
+- `numeric_chmod_string`: The numeric value as a string (e.g., "755", "0644", "5").
+
+**Example:**
+```python
+result = await session.call_tool("calculate_symbolic_chmod", {
+    "numeric_chmod_string": "755"
+})
+# result: {"symbolic_chmod": "rwxr-xr-x", "error": null}
+```
+
 ## Available Resources
 
 ### Base Converter Resource
