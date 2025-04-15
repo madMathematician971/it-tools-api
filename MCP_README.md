@@ -269,9 +269,43 @@ Convert a Roman numeral string to its integer representation.
 **Example:**
 ```python
 result = await session.call_tool("decode_from_roman", {
-    "roman_numeral": "MCMXCIV"
+    "roman_numeral": "MMXXIV"
 })
-# result: {"input_value": "MCMXCIV", "result": 1994, "error": null}
+# result: {"input_value": "MMXXIV", "result": 2024, "error": null}
+```
+
+### Base64 Encoder
+
+Encode a string to Base64.
+
+**Tool Name:** `base64_encode_string`
+
+**Parameters:**
+- `input_string`: The string to encode.
+
+**Example:**
+```python
+result = await session.call_tool("base64_encode_string", {
+    "input_string": "Hello, world!"
+})
+# result: {"result_string": "SGVsbG8sIHdvcmxkIQ==", "error": null}
+```
+
+### Base64 Decoder
+
+Decode a Base64 string.
+
+**Tool Name:** `base64_decode_string`
+
+**Parameters:**
+- `input_string`: The Base64 string to decode.
+
+**Example:**
+```python
+result = await session.call_tool("base64_decode_string", {
+    "input_string": "SGVsbG8sIHdvcmxkIQ=="
+})
+# result: {"result_string": "Hello, world!", "error": null}
 ```
 
 ### IPv4 Subnet Calculator

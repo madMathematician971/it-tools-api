@@ -4,6 +4,7 @@ MCP tools for IT Tools API.
 
 # Import all tools so they can be imported directly from mcp.tools
 from mcp_server.tools.base_converter import base_convert
+from mcp_server.tools.base64_converter import base64_decode_string, base64_encode_string
 from mcp_server.tools.hash_calculator import calculate_hash
 from mcp_server.tools.hmac_calculator import calculate_hmac
 from mcp_server.tools.ipv4_subnet_calculator import calculate_ipv4_subnet
