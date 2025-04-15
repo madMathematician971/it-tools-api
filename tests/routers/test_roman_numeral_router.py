@@ -110,19 +110,20 @@ async def test_decode_from_roman_success(client: TestClient, roman_numeral: str,
     assert output.result == expected_number
     if isinstance(output.input_value, str):
         assert output.input_value.upper() == roman_numeral.upper()
-    # If not a string, it's likely an error case where input_value might be set differently
-    # The error check below should cover those scenarios
+    # Check that error is None for valid standard numerals
     assert output.error is None
 
 
 @pytest.mark.parametrize(
     "invalid_roman, error_substring, expected_status",
     [
-        ("IIII", "not in standard form", status.HTTP_200_OK),
-        ("VV", "not in standard form", status.HTTP_200_OK),
-        ("IM", "not in standard form", status.HTTP_200_OK),
-        ("VX", "not in standard form", status.HTTP_200_OK),
-        ("MMMM", "Input should be less than or equal to 3999", status.HTTP_200_OK),
+        # Non-standard forms return 400 with warning
+        ("IIII", "Warning: Roman numeral is not in standard form.", status.HTTP_400_BAD_REQUEST),
+        ("VV", "Warning: Roman numeral is not in standard form.", status.HTTP_400_BAD_REQUEST),
+        ("IM", "Warning: Roman numeral is not in standard form.", status.HTTP_400_BAD_REQUEST),
+        ("VX", "Warning: Roman numeral is not in standard form.", status.HTTP_400_BAD_REQUEST),
+        ("MMMM", "Decoded value (4000) is outside the standard range (1-3999)", status.HTTP_400_BAD_REQUEST),
+        # Invalid characters / empty caught by Pydantic validation (422)
         ("ABC", "Invalid characters in Roman numeral", status.HTTP_422_UNPROCESSABLE_ENTITY),
         ("", "Invalid characters in Roman numeral", status.HTTP_422_UNPROCESSABLE_ENTITY),
     ],
@@ -132,17 +133,32 @@ async def test_decode_from_roman_invalid_input(
     client: TestClient, invalid_roman: str, error_substring: str, expected_status: int
 ):
     """Test decoding with invalid Roman numeral strings."""
+    # Use dict to bypass Pydantic validation for cases testing endpoint logic (like non-standard)
+    # For cases testing Pydantic (422), this doesn't strictly matter but is fine.
     payload_dict = {"roman_numeral": invalid_roman}
     response = client.post("/api/roman-numerals/decode", json=payload_dict)
 
     assert response.status_code == expected_status
 
-    if expected_status == status.HTTP_422_UNPROCESSABLE_ENTITY:
-        assert error_substring.lower() in str(response.json()).lower()
-    elif expected_status == status.HTTP_200_OK:
-        output = RomanOutput(**response.json())
-        assert output.result == 0
-        assert output.error is not None
-        assert error_substring.lower() in output.error.lower()
+    # Updated logic for 400 Bad Request vs 422 Unprocessable Entity
+    if expected_status == status.HTTP_400_BAD_REQUEST:
+        response_data = response.json()
+        assert "detail" in response_data
+        assert error_substring.lower() in response_data["detail"].lower()
+    elif expected_status == status.HTTP_422_UNPROCESSABLE_ENTITY:
+        # FastAPI/Pydantic validation error structure is different
+        response_data = response.json()
+        assert "detail" in response_data
+        assert isinstance(response_data["detail"], list)
+        assert len(response_data["detail"]) > 0
+        # Check if expected substring is in any of the validation error messages
+        found_error = False
+        for error in response_data["detail"]:
+            if error_substring.lower() in error.get("msg", "").lower():
+                found_error = True
+                break
+        assert (
+            found_error
+        ), f"Expected error substring '{error_substring}' not found in 422 details: {response_data['detail']}"
     else:
-        pytest.fail(f"Unexpected status code in test parameterization: {expected_status}")
+        pytest.fail(f"Unexpected expected_status code in test parameterization: {expected_status}")

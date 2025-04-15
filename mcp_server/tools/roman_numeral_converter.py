@@ -110,20 +110,32 @@ def decode_from_roman(roman_numeral: str) -> dict[str, Any]:
                 }
 
         # Check for validity by re-encoding. This catches non-standard forms.
-        # Need to handle potential errors in re-encoding
+        re_encoded_error = None
         try:
-            if 1 <= result <= 3999:  # Only re-validate if within valid range
-                re_encoded = encode_to_roman(result)
-                if re_encoded.get("error") or re_encoded.get("result") != roman_numeral:
+            if 1 <= result <= 3999:  # Only re-validate if within standard range
+                re_encoded_dict = encode_to_roman(result)
+                re_encoded_error = re_encoded_dict.get("error")
+                if re_encoded_error or re_encoded_dict.get("result") != roman_numeral:
+                    # Non-standard form warning
                     return {
                         "input_value": roman_numeral,
                         "result": result,
                         "error": "Warning: Roman numeral is not in standard form.",
                     }
-        except Exception:
+        except Exception as re_enc_e:
             # Tolerate re-encoding check failures but log them
-            logger.warning(f"Re-encoding check failed for {roman_numeral} -> {result}")
+            logger.warning(f"Re-encoding check failed for {roman_numeral} -> {result}: {re_enc_e}")
+            re_encoded_error = f"Re-encoding check failed: {re_enc_e}"
 
+        # Final check: Ensure decoded result is within standard range (1-3999)
+        if not 1 <= result <= 3999:
+            return {
+                "input_value": roman_numeral,
+                "result": result,
+                "error": f"Decoded value ({result}) is outside the standard range (1-3999).",
+            }
+
+        # If no errors found so far, return success
         return {"input_value": roman_numeral, "result": result, "error": None}
 
     except ValueError as ve:
