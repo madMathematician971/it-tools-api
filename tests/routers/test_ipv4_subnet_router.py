@@ -187,10 +187,8 @@ async def test_ipv4_subnet_calculator_failure(client: TestClient, ip_cidr: str, 
     payload = Ipv4SubnetInput(ip_cidr=ip_cidr)
     response = client.post("/api/ipv4/subnet-calculator/", json=payload.model_dump())
 
-    assert response.status_code == status.HTTP_200_OK
-    output = Ipv4SubnetOutput(**response.json())
-
-    assert output.error is not None
-    assert error_substring in output.error
-    assert output.network_address is None
-    assert output.cidr_prefix is None
+    # Updated assertions for 400 Bad Request response
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    response_data = response.json()
+    assert "detail" in response_data
+    assert error_substring in response_data["detail"]
