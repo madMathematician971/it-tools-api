@@ -273,6 +273,27 @@ result = await session.call_tool("parse_datetime", {
 # }
 ```
 
+### Docker Run to Compose Converter
+
+Converts a `docker run` command string into a basic `docker-compose.yml` YAML structure.
+
+**API Endpoint:** `/api/docker/run-to-compose`
+**MCP Tool Function:** `mcp_server.tools.docker_converter.convert_run_to_compose`
+
+**Parameters:**
+- `docker_run_command`: The full `docker run ...` command string.
+
+**Example:**
+```python
+result = await session.call_tool("convert_run_to_compose", {
+    "docker_run_command": "docker run -d --name my-app -p 8080:80 my-image:latest"
+})
+# result: {
+#   "docker_compose_yaml": "services:\n  my-app:\n    image: my-image:latest\n    ports:\n    - 8080:80\n    container_name: my-app\n",
+#   "error": null
+# }
+```
+
 ### Phone Number Parser
 
 Parse, validate, and format a phone number using the phonenumbers library.
