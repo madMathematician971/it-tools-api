@@ -325,6 +325,68 @@ result = await session.call_tool("normalize_email", {
 # }
 ```
 
+### AES Encryptor (AES-256-CBC)
+
+Encrypt text using AES-256-CBC. It uses PBKDF2-HMAC-SHA256 to derive a key from the password and includes a random salt and IV in the output ciphertext.
+
+**API Endpoint:** `/api/crypto/encrypt`
+**MCP Tool Function:** `mcp_server.tools.encryption_processor.encrypt_text`
+
+**Parameters:**
+- `text`: The plaintext string to encrypt.
+- `password`: The password for key derivation.
+- `algorithm`: Must be "aes-256-cbc".
+
+**Example:**
+```python
+result = await session.call_tool("encrypt_text", {
+    "text": "Secret data",
+    "password": "supersecure",
+    "algorithm": "aes-256-cbc"
+})
+# result: {
+#   "ciphertext": "Base64StringContainingSaltAndIVAndCiphertext==",
+#   "error": null
+# }
+```
+
+### AES Decryptor (AES-256-CBC)
+
+Decrypt text that was encrypted using the corresponding AES-256-CBC encryption tool. It extracts the salt and IV from the ciphertext and re-derives the key using PBKDF2.
+
+**API Endpoint:** `/api/crypto/decrypt`
+**MCP Tool Function:** `mcp_server.tools.encryption_processor.decrypt_text`
+
+**Parameters:**
+- `ciphertext`: The Base64 encoded string containing salt, IV, and encrypted data.
+- `password`: The password used during encryption.
+- `algorithm`: Must be "aes-256-cbc".
+
+**Example:**
+```python
+# Assuming 'ciphertext_from_encrypt' is the result from the encrypt_text tool
+result = await session.call_tool("decrypt_text", {
+    "ciphertext": ciphertext_from_encrypt,
+    "password": "supersecure",
+    "algorithm": "aes-256-cbc"
+})
+# result: {
+#   "plaintext": "Secret data",
+#   "error": null
+# }
+
+# Example with wrong password
+result = await session.call_tool("decrypt_text", {
+    "ciphertext": ciphertext_from_encrypt,
+    "password": "wrongpassword",
+    "algorithm": "aes-256-cbc"
+})
+# result: {
+#   "plaintext": null,
+#   "error": "Decryption failed. Likely incorrect password or corrupt/invalid data."
+# }
+```
+
 ### Phone Number Parser
 
 Parse, validate, and format a phone number using the phonenumbers library.
