@@ -243,6 +243,36 @@ result = await session.call_tool("convert_data", {
 # result: {"output_string": "name: Test\nvalue: 123\n", "error": null}
 ```
 
+### Datetime Converter
+
+Converts a date/time string from one format to another, automatically detecting the input format if possible. Handles various formats and timezones.
+
+**API Endpoint:** `/api/datetime/convert`
+**MCP Tool Function:** `mcp_server.tools.datetime_parser.parse_datetime`
+
+**Parameters:**
+- `input_value`: The date/time string to parse (e.g., "2023-10-26T10:00:00Z", "October 26, 2023 10:00 AM UTC", "1666788000").
+- `input_format`: Optional Python `strptime` format string to specify the exact input format. If omitted, the tool attempts auto-detection.
+- `output_format`: Python `strftime` format string for the desired output (e.g., `"%Y-%m-%d %H:%M:%S %Z"`).
+
+**Example:**
+```python
+result = await session.call_tool("parse_datetime", {
+    "input_value": "2023-10-26T10:00:00Z",
+    "output_format": "%A, %B %d, %Y %I:%M:%S %p %Z"
+})
+# result: {
+#   "result_string": "Thursday, October 26, 2023 10:00:00 AM UTC",
+#   "input_value": "2023-10-26T10:00:00Z",
+#   "input_format_used": "%Y-%m-%dT%H:%M:%SZ", # Detected format
+#   "output_format": "%A, %B %d, %Y %I:%M:%S %p %Z",
+#   "parsed_datetime": "2023-10-26T10:00:00+00:00",
+#   "timezone_name": "UTC",
+#   "error": null,
+#   ... (other parsed components)
+# }
+```
+
 ### Phone Number Parser
 
 Parse, validate, and format a phone number using the phonenumbers library.
