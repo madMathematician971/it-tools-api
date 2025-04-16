@@ -222,6 +222,27 @@ result = await session.call_tool("convert_list", {
 # result: {"result": "- item1\n- item2\n- item3", "error": null}
 ```
 
+### Data Format Converter
+
+Convert data between JSON, YAML, TOML, and XML formats.
+
+**Tool Name:** `convert_data`
+
+**Parameters:**
+- `input_string`: The data string to convert.
+- `input_type`: The format of the input string ('json', 'yaml', 'toml', 'xml').
+- `output_type`: The desired output format ('json', 'yaml', 'toml', 'xml').
+
+**Example:**
+```python
+result = await session.call_tool("convert_data", {
+    "input_string": '{"name":"Test", "value":123}',
+    "input_type": "json",
+    "output_type": "yaml"
+})
+# result: {"output_string": "name: Test\nvalue: 123\n", "error": null}
+```
+
 ### Phone Number Parser
 
 Parse, validate, and format a phone number using the phonenumbers library.
