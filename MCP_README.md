@@ -387,6 +387,31 @@ result = await session.call_tool("decrypt_text", {
 # }
 ```
 
+### ETA Calculator
+
+Calculates the end datetime by adding a duration (in seconds) to a start datetime provided in ISO 8601 format. Assumes UTC if no timezone is provided in the start time.
+
+**API Endpoint:** `/api/eta/calculate`
+**MCP Tool Function:** `mcp_server.tools.eta_calculator.calculate_eta`
+
+**Parameters:**
+- `start_time_iso`: The starting datetime in ISO 8601 format (e.g., '2023-10-27T10:00:00Z').
+- `duration_seconds`: The duration in seconds to add (must be non-negative).
+
+**Example:**
+```python
+result = await session.call_tool("calculate_eta", {
+    "start_time_iso": "2024-01-01T12:00:00+01:00",
+    "duration_seconds": 3660
+})
+# result: {
+#   "start_time": "2024-01-01T12:00:00+01:00",
+#   "duration_seconds": 3660,
+#   "end_time": "2024-01-01T13:01:00+01:00",
+#   "error": null
+# }
+```
+
 ### Phone Number Parser
 
 Parse, validate, and format a phone number using the phonenumbers library.

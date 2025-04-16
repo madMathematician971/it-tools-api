@@ -1,8 +1,10 @@
 import logging
-from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
+
+# Import the tool function
+from mcp_server.tools.eta_calculator import calculate_eta
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -30,36 +32,38 @@ class EtaOutput(BaseModel):
     response_model=EtaOutput,
     summary="Calculate end time from start time and duration",
 )
-async def calculate_eta(payload: EtaInput):
-    """Calculates the end datetime by adding a duration (in seconds) to a start datetime.
+async def calculate_eta_endpoint(payload: EtaInput):
+    """Calculates the end datetime by adding a duration (in seconds) to a start datetime using the MCP tool.
 
     Both start and end times are returned in ISO 8601 format.
-    The input start time should include timezone information.
     """
     try:
-        # Parse the ISO 8601 start time string
-        try:
-            start_dt = datetime.fromisoformat(payload.start_time_iso)
-        except ValueError:
+        result = calculate_eta(start_time_iso=payload.start_time_iso, duration_seconds=payload.duration_seconds)
+
+        if error := result.get("error"):
+            logger.warning(f"ETA calculation tool failed: {error}")
+            if "Invalid start_time_iso format" in error or "Duration must be non-negative" in error:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid input: {error}")
+            else:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Tool error: {error}")
+
+        # Extract results from the tool output
+        start_time = result.get("start_time")
+        end_time = result.get("end_time")
+        duration = result.get("duration_seconds")
+
+        # Basic check to ensure tool returned expected fields on success
+        if start_time is None or end_time is None or duration is None:
+            logger.error("Tool succeeded but returned incomplete data.")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid start_time_iso format. Please use ISO 8601 format.",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal error: Tool failed to provide complete results.",
             )
 
-        # Ensure the datetime object is timezone-aware if it wasn't already
-        # If no timezone was provided, assume UTC as a sensible default, but log a warning.
-        if start_dt.tzinfo is None or start_dt.tzinfo.utcoffset(start_dt) is None:
-            logger.warning(f"Input start_time '{payload.start_time_iso}' lacks timezone info. Assuming UTC.")
-            start_dt = start_dt.replace(tzinfo=timezone.utc)
-
-        # Calculate the end time
-        duration = timedelta(seconds=payload.duration_seconds)
-        end_dt = start_dt + duration
-
         return EtaOutput(
-            start_time=start_dt.isoformat(),
-            duration_seconds=payload.duration_seconds,
-            end_time=end_dt.isoformat(),
+            start_time=start_time,
+            duration_seconds=duration,
+            end_time=end_time,
         )
 
     except HTTPException as http_exc:
