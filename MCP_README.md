@@ -680,6 +680,48 @@ result = await session.call_tool("validate_cron", {
 # result: {"is_valid": false, "next_runs": null, "error": "Invalid cron string format."}
 ```
 
+### HTML Entity Encoder
+
+Encode special characters (like <, >, &, ", ') in text into their corresponding HTML entities.
+
+**API Endpoint:** `/api/html-entities/encode`
+**MCP Tool Function:** `mcp_server.tools.html_entities_processor.encode_html_entities`
+
+**Parameters:**
+- `text`: The input string to encode.
+
+**Example:**
+```python
+result = await session.call_tool("encode_html_entities", {
+    "text": "<p class=\"my-class\">It's > 5 & < 10</p>"
+})
+# result: {
+#   "result": "&lt;p class=&quot;my-class&quot;&gt;It&#x27;s &gt; 5 &amp; &lt; 10&lt;/p&gt;",
+#   "error": null
+# }
+```
+
+### HTML Entity Decoder
+
+Decode HTML entities (like &lt;, &gt;, &amp;, &quot;, &#x27;) in text back into their original characters.
+
+**API Endpoint:** `/api/html-entities/decode`
+**MCP Tool Function:** `mcp_server.tools.html_entities_processor.decode_html_entities`
+
+**Parameters:**
+- `text`: The input string containing HTML entities.
+
+**Example:**
+```python
+result = await session.call_tool("decode_html_entities", {
+    "text": "&lt;p class=&quot;my-class&quot;&gt;It&#x27;s &gt; 5 &amp; &lt; 10&lt;/p&gt;"
+})
+# result: {
+#   "result": "<p class=\"my-class\">It's > 5 & < 10</p>",
+#   "error": null
+# }
+```
+
 ## Available Resources
 
 ### Base Converter Resource
