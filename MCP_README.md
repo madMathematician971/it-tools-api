@@ -294,6 +294,37 @@ result = await session.call_tool("convert_run_to_compose", {
 # }
 ```
 
+### Email Normalizer
+
+Validates and normalizes an email address based on common provider rules (Gmail/Google, Outlook/Hotmail/Live), removing dots and sub-addressing (+) where applicable.
+
+**API Endpoint:** `/api/email/normalize`
+**MCP Tool Function:** `mcp_server.tools.email_processor.normalize_email`
+
+**Parameters:**
+- `email_address`: The email address string to validate and normalize.
+
+**Example:**
+```python
+result = await session.call_tool("normalize_email", {
+    "email_address": "Test.User+alias@gmail.com"
+})
+# result: {
+#   "normalized_email": "testuser@gmail.com",
+#   "original_email": "Test.User+alias@gmail.com",
+#   "error": null
+# }
+
+result = await session.call_tool("normalize_email", {
+    "email_address": "invalid-email"
+})
+# result: {
+#   "normalized_email": null,
+#   "original_email": "invalid-email",
+#   "error": "Invalid email format."
+# }
+```
+
 ### Phone Number Parser
 
 Parse, validate, and format a phone number using the phonenumbers library.

@@ -86,20 +86,20 @@ async def test_email_normalize_invalid_format(client: TestClient, invalid_email:
 
     # Map specific invalid inputs to their expected error details
     expected_details = {
-        "plainaddress": "Invalid email format.",
-        "#@%^%#$@#$@#.com": "Invalid email format.",
-        "@example.com": "Invalid email format.",
-        "Joe Smith <email@example.com>": "Invalid email format.",
-        "email.example.com": "Invalid email format.",
-        "email@example@example.com": "Invalid email format.",
-        "": "Invalid email format.",
-        ".email@example.com": "Invalid email characters or structure.",
-        "email.@example.com": "Invalid email characters or structure.",
-        "email..email@example.com": "Invalid email characters or structure.",
-        "email@example.com (Joe Smith)": "Invalid email characters or structure.",
-        "email@example..com": "Invalid email characters or structure.",
-        "Abc..123@example.com": "Invalid email characters or structure.",
-        "test.+.@gmail.com": "Invalid email characters or structure.",
+        "plainaddress": "Invalid input: Invalid email format.",
+        "#@%^%#$@#$@#.com": "Invalid input: Invalid email format.",
+        "@example.com": "Invalid input: Invalid email format.",
+        "Joe Smith <email@example.com>": "Invalid input: Invalid email format.",
+        "email.example.com": "Invalid input: Invalid email format.",
+        "email@example@example.com": "Invalid input: Invalid email format.",
+        "": "Invalid input: Invalid email format.",
+        ".email@example.com": "Invalid input: Invalid email characters or structure.",
+        "email.@example.com": "Invalid input: Invalid email characters or structure.",
+        "email..email@example.com": "Invalid input: Invalid email characters or structure.",
+        "email@example.com (Joe Smith)": "Invalid input: Invalid email format.",
+        "email@example..com": "Invalid input: Invalid email characters or structure.",
+        "Abc..123@example.com": "Invalid input: Invalid email characters or structure.",
+        "test.+.@gmail.com": "Invalid input: Invalid email characters or structure.",
     }
 
     expected_detail = expected_details.get(invalid_email)
