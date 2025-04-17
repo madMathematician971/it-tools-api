@@ -750,6 +750,45 @@ result = await session.call_tool("expand_ipv4_range", {
 # result: {"count": 131072, "addresses": ["10.0.0.0", ..., "10.0.255.255"], "truncated": true, "error": null}
 ```
 
+### JWT Parser
+
+Parse a JSON Web Token (JWT), decode its header and payload, and optionally verify its signature using a provided secret or public key.
+
+**Tool Name:** `parse_jwt`
+
+**Parameters:**
+- `jwt_string`: The JWT token string.
+- `secret_or_key`: (Optional) The secret (for HS*) or public key PEM string (for RS*/ES*) for signature verification.
+- `algorithms`: (Optional) List of allowed algorithms for verification (e.g., ["HS256", "RS256"]). Required if `secret_or_key` is provided and the algorithm isn't uniquely defined in the JWT header.
+
+**Example (Decode Only):**
+```python
+result = await session.call_tool("parse_jwt", {
+    "jwt_string": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+})
+# result: {"header": {"alg": "HS256", "typ": "JWT"}, "payload": {"sub": "1234567890", "name": "John Doe", "iat": 1516239022}}
+```
+
+**Example (Verify HS256):**
+```python
+result = await session.call_tool("parse_jwt", {
+    "jwt_string": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+    "secret_or_key": "your-256-bit-secret"
+    # "algorithms": ["HS256"] # Optional if header alg is correct
+})
+# result: {"header": ..., "payload": ..., "signature_verified": true}
+```
+
+**Example (Verification Failed):**
+```python
+result = await session.call_tool("parse_jwt", {
+    "jwt_string": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+    "secret_or_key": "wrong-secret",
+    "algorithms": ["HS256"]
+})
+# result: {"header": ..., "payload": ..., "signature_verified": false, "error": "Signature verification failed: Signature verification failed."}
+```
+
 ### HTML Entity Encoder
 
 Encode special characters (like <, >, &, ", ') in text into their corresponding HTML entities.
@@ -830,6 +869,84 @@ result = await session.call_tool("validate_iban", {
 #   "bban": null,
 #   "error": "Invalid checksum digits"
 # }
+```
+
+### IPv4 Converter
+
+Convert an IPv4 address between dotted decimal, decimal, hexadecimal, and binary formats.
+
+**Tool Name:** `convert_ipv4`
+
+**Parameters:**
+- `ip_address`: The IP address string in dotted, decimal, hex, or binary format.
+- `format_hint`: Optional hint ('dotted', 'decimal', 'hex', 'binary') to specify input format.
+
+**Example:**
+```python
+result = await session.call_tool("convert_ipv4", {"ip_address": "192.168.1.1"})
+# result: {"original": "192.168.1.1", "dotted_decimal": "192.168.1.1", "decimal": 3232235777, "hexadecimal": "0xc0a80101", "binary": "1100...", "error": null}
+```
+
+### IPv4 Range Expander
+
+Expand an IPv4 CIDR block or hyphenated IP range into a list of individual IP addresses.
+
+**Tool Name:** `expand_ipv4_range`
+
+**Parameters:**
+- `ip_range`: The IPv4 range string (CIDR or hyphenated).
+
+**Example:**
+```python
+result = await session.call_tool("expand_ipv4_range", {"ip_range": "192.168.1.254/30"})
+# result: {"count": 4, "addresses": ["192.168.1.252", "192.168.1.253", "192.168.1.254", "192.168.1.255"], "truncated": false, "error": null}
+```
+
+### IPv4 Subnet Calculator
+
+Calculate IPv4 subnet details given an IP address and CIDR prefix or netmask.
+
+**Tool Name:** `calculate_ipv4_subnet`
+
+**Parameters:**
+- `ip_cidr`: The IP address and CIDR/mask (e.g., "192.168.1.50/24").
+
+**Example:**
+```python
+result = await session.call_tool("calculate_ipv4_subnet", {"ip_cidr": "192.168.1.50/24"})
+# result: {"network_address": "192.168.1.0", "broadcast_address": "192.168.1.255", "netmask": "255.255.255.0", ... "error": null}
+```
+
+### IPv6 ULA Generator
+
+Generate an IPv6 Unique Local Address (ULA) based on RFC 4193.
+
+**Tool Name:** `generate_ipv6_ula`
+
+**Parameters:**
+- `global_id`: Optional 10-character hexadecimal Global ID. If None, generates randomly.
+- `subnet_id`: 4-character hexadecimal Subnet ID (default: "0001").
+
+**Example:**
+```python
+result = await session.call_tool("generate_ipv6_ula", {"global_id": "a1b2c3d4e5", "subnet_id": "abcd"})
+# result: {"ula_address": "fda1:b2c3:d4e5:abcd::1", "global_id": "a1b2c3d4e5", "subnet_id": "abcd", "error": null}
+```
+
+### JSON to CSV Converter
+
+Convert JSON strings (representing a list of objects) to CSV strings.
+
+**Tool Name:** `json_to_csv`
+
+**Parameters:**
+- `json_string`: The JSON string to convert. Must be an array/list of objects or a single object.
+- `delimiter`: The delimiter character for the CSV output (default: ',').
+
+**Example:**
+```python
+csv_result = await session.call_tool("json_to_csv", {"json_string": '[{"a": 1, "b": 2}, {"a": 3, "b": 4}]'})
+# csv_result: {"result_csv": "a,b\r\n1,2\r\n3,4\r\n", "error": null}
 ```
 
 ## Available Resources

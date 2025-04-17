@@ -1,22 +1,30 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class JwtInput(BaseModel):
-    jwt_string: str = Field(..., description="The JWT token string")
+    jwt_string: str = Field(..., description="The JWT string to decode.")
     secret_or_key: Optional[str] = Field(
-        None,
-        description="Optional secret (for HMAC) or public key (for RSA/EC) PEM string for signature verification",
+        None, 
+        description="The secret (for HS*) or public key (for RS*/ES*) for signature verification.",
     )
     algorithms: Optional[List[str]] = Field(
         None,
-        description="Optional list of allowed algorithms for verification (e.g., ['HS256', 'RS256'])",
+        description="List of allowed algorithms (e.g., ['HS256', 'HS512']). Required if verifying.",
     )
 
 
 class JwtOutput(BaseModel):
-    header: Optional[Dict[str, Any]] = None
-    payload: Optional[Dict[str, Any]] = None
-    signature_verified: Optional[bool] = None
-    error: Optional[str] = None
+    header: Optional[dict[str, Any]] = Field(None, description="Decoded JWT header.")
+    payload: Optional[dict[str, Any]] = Field(None, description="Decoded JWT payload.")
+    signature_verified: Optional[bool] = Field(
+        None,
+        description="Whether the signature was successfully verified (True/False) or verification was not attempted (None).",
+    )
+    error: Optional[str] = Field(None, description="Error message if parsing or verification failed.")
+
+    @field_validator("header", "payload", mode="before")
+    def empty_dict_to_none(cls, value):
+        # Ensure empty dicts are treated as None for consistency if needed,
+        return value if value else None
