@@ -59,7 +59,7 @@ def expand_ipv4_range(ip_range: str) -> dict[str, Any]:
 
                 addresses = []
                 # Use the network object's iterator which includes all addresses
-                addr_iterator = network.__iter__()
+                addr_iterator = iter(network)
                 for _ in range(limit):
                     try:
                         # Get the next address from the iterator

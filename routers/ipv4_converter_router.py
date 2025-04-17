@@ -30,9 +30,8 @@ async def convert_ipv4_endpoint(input_data: IPv4Input):
                 or "Unknown format hint" in error
             ):
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-            else:
-                # Assume other errors are internal
-                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Tool error: {error}")
+            # Assume other errors are internal
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Tool error: {error}")
 
         # Check for missing fields on success (should not happen)
         if not all(k in result for k in ["original", "dotted_decimal", "decimal", "hexadecimal", "binary"]):
