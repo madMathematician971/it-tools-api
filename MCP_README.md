@@ -722,6 +722,34 @@ result = await session.call_tool("validate_cron", {
 # result: {"is_valid": false, "next_runs": null, "error": "Invalid cron string format."}
 ```
 
+### IPv4 Range Expander
+
+Expands an IPv4 range provided in CIDR or hyphenated format into a list of individual IP addresses. The result may be truncated if the range exceeds a predefined limit (65536).
+
+**Tool Name:** `expand_ipv4_range`
+
+**Parameters:**
+- `ip_range`: The IPv4 range string (e.g., "192.168.1.0/24", "10.0.0.1-10.0.0.10").
+
+**Example:**
+```python
+result = await session.call_tool("expand_ipv4_range", {
+    "ip_range": "192.168.1.254/30"
+})
+# result: {"count": 4, "addresses": ["192.168.1.252", "192.168.1.253", "192.168.1.254", "192.168.1.255"], "truncated": false, "error": null}
+
+result = await session.call_tool("expand_ipv4_range", {
+    "ip_range": "10.0.0.1-10.0.0.3"
+})
+# result: {"count": 3, "addresses": ["10.0.0.1", "10.0.0.2", "10.0.0.3"], "truncated": false, "error": null}
+
+# Example with truncation (if MAX_ADDRESSES_TO_RETURN is 65536)
+result = await session.call_tool("expand_ipv4_range", {
+    "ip_range": "10.0.0.0/15" # > 65536 addresses
+})
+# result: {"count": 131072, "addresses": ["10.0.0.0", ..., "10.0.255.255"], "truncated": true, "error": null}
+```
+
 ### HTML Entity Encoder
 
 Encode special characters (like <, >, &, ", ') in text into their corresponding HTML entities.
