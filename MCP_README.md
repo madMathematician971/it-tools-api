@@ -722,6 +722,46 @@ result = await session.call_tool("decode_html_entities", {
 # }
 ```
 
+### IBAN Validator
+
+Validates an IBAN string using the `schwifty` library and parses its components if valid. Handles checksum validation, length checks, country code validation, and BBAN structure.
+
+**API Endpoint:** `/api/iban/validate`
+**MCP Tool Function:** `mcp_server.tools.iban_processor.validate_iban`
+
+**Parameters:**
+- `iban_string`: The IBAN string to validate.
+
+**Example (Valid):**
+```python
+result = await session.call_tool("validate_iban", {
+    "iban_string": "DE89 3704 0044 0532 0130 00"
+})
+# result: {
+#   "is_valid": true,
+#   "iban_string_formatted": "DE89 3704 0044 0532 0130 00",
+#   "country_code": "DE",
+#   "check_digits": "89",
+#   "bban": "370400440532013000",
+#   "error": null
+# }
+```
+
+**Example (Invalid):**
+```python
+result = await session.call_tool("validate_iban", {
+    "iban_string": "DE89 3704 0044 0532 0130 01"
+})
+# result: {
+#   "is_valid": false,
+#   "iban_string_formatted": null,
+#   "country_code": null,
+#   "check_digits": null,
+#   "bban": null,
+#   "error": "Invalid checksum digits"
+# }
+```
+
 ## Available Resources
 
 ### Base Converter Resource

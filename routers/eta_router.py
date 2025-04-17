@@ -44,8 +44,7 @@ async def calculate_eta_endpoint(payload: EtaInput):
             logger.warning(f"ETA calculation tool failed: {error}")
             if "Invalid start_time_iso format" in error or "Duration must be non-negative" in error:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid input: {error}")
-            else:
-                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Tool error: {error}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Tool error: {error}")
 
         # Extract results from the tool output
         start_time = result.get("start_time")
