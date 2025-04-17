@@ -4,9 +4,12 @@ import html
 import logging
 from typing import Any
 
+from mcp_server import mcp_app
+
 logger = logging.getLogger(__name__)
 
 
+@mcp_app.tool()
 def encode_html_entities(text: str) -> dict[str, Any]:
     """
     Encode special characters in text into HTML entities.
@@ -29,6 +32,7 @@ def encode_html_entities(text: str) -> dict[str, Any]:
         return {"result": None, "error": f"Internal server error during encoding: {str(e)}"}
 
 
+@mcp_app.tool()
 def decode_html_entities(text: str) -> dict[str, Any]:
     """
     Decode HTML entities in text back into characters.

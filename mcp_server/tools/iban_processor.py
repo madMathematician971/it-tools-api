@@ -16,9 +16,12 @@ from schwifty.exceptions import (
     SchwiftyException,
 )
 
+from mcp_server import mcp_app
+
 logger = logging.getLogger(__name__)
 
 
+@mcp_app.tool()
 def validate_iban(iban_string: str) -> dict[str, Any]:
     """
     Validate an IBAN string and parse its components using the schwifty library.

@@ -4,12 +4,15 @@ import ipaddress
 import logging
 from typing import Any, List
 
+from mcp_server import mcp_app
+
 logger = logging.getLogger(__name__)
 
 # Arbitrary limit to prevent excessively large results
 MAX_ADDRESSES_TO_RETURN = 65536
 
 
+@mcp_app.tool()
 def expand_ipv4_range(ip_range: str) -> dict[str, Any]:
     """
     Expands an IPv4 CIDR block or hyphenated IP range into a list of individual IP addresses.

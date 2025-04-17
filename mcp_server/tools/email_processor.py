@@ -4,9 +4,12 @@ import logging
 import re
 from typing import Any
 
+from mcp_server import mcp_app
+
 logger = logging.getLogger(__name__)
 
 
+@mcp_app.tool()
 def normalize_email(email_address: str) -> dict[str, Any]:
     """
     Validate and normalize an email address based on common provider rules.

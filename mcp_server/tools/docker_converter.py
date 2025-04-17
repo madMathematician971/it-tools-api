@@ -6,9 +6,12 @@ from typing import Any
 
 import yaml
 
+from mcp_server import mcp_app
+
 logger = logging.getLogger(__name__)
 
 
+@mcp_app.tool()
 def convert_run_to_compose(docker_run_command: str) -> dict[str, Any]:
     """
     Convert a 'docker run' command string into a docker-compose YAML structure.

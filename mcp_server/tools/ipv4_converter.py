@@ -5,6 +5,8 @@ import logging
 import re
 from typing import Any, Optional
 
+from mcp_server import mcp_app
+
 logger = logging.getLogger(__name__)
 
 
@@ -93,6 +95,7 @@ def _detect_and_convert_ip(ip_string: str, format_hint: Optional[str] = None) ->
     raise ValueError("Could not determine IP address format")
 
 
+@mcp_app.tool()
 def convert_ipv4(ip_address: str, format_hint: Optional[str] = None) -> dict[str, Any]:
     """
     Convert an IPv4 address between dotted decimal, decimal, hexadecimal, and binary formats.

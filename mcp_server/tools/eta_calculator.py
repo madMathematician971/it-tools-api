@@ -4,9 +4,12 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from mcp_server import mcp_app
+
 logger = logging.getLogger(__name__)
 
 
+@mcp_app.tool()
 def calculate_eta(start_time_iso: str, duration_seconds: int) -> dict[str, Any]:
     """
     Calculates the end datetime by adding a duration (in seconds) to a start datetime.

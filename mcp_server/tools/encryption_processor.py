@@ -10,6 +10,8 @@ from cryptography.hazmat.primitives import hashes, padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
+from mcp_server import mcp_app
+
 logger = logging.getLogger(__name__)
 
 # Constants
@@ -31,6 +33,7 @@ def _derive_key(password: str, salt: bytes) -> bytes:
     return kdf.derive(password.encode("utf-8"))
 
 
+@mcp_app.tool()
 def encrypt_text(text: str, password: str, algorithm: str) -> dict[str, Any]:
     """
     Encrypt text using a specified algorithm (currently only AES-256-CBC).
@@ -72,6 +75,7 @@ def encrypt_text(text: str, password: str, algorithm: str) -> dict[str, Any]:
         return {"ciphertext": None, "error": f"Internal server error during encryption: {str(e)}"}
 
 
+@mcp_app.tool()
 def decrypt_text(ciphertext: str, password: str, algorithm: str) -> dict[str, Any]:
     """
     Decrypt text using a specified algorithm (currently only AES-256-CBC).
