@@ -24,7 +24,7 @@ from mcp_server.tools.ipv4_converter import convert_ipv4
 from mcp_server.tools.ipv4_range_expander import expand_ipv4_range
 from mcp_server.tools.ipv4_subnet_calculator import calculate_ipv4_subnet
 from mcp_server.tools.ipv6_ula_generator import generate_ipv6_ula
-from mcp_server.tools.json_csv_converter import json_to_csv
+from mcp_server.tools.json_csv_converter import csv_to_json, json_to_csv
 from mcp_server.tools.json_diff import json_diff
 from mcp_server.tools.json_formatter import format_json, minify_json
 from mcp_server.tools.jwt_processor import parse_jwt

@@ -63,3 +63,63 @@ def json_to_csv(json_string: str, delimiter: str = ",") -> dict[str, Any]:
     except Exception as e:
         logger.error(f"Error converting JSON to CSV: {e}", exc_info=True)
         return {"result_csv": "", "error": f"Internal server error during JSON to CSV conversion: {str(e)}"}
+
+
+@mcp_app.tool()
+def csv_to_json(csv_string: str, delimiter: str = ",") -> dict[str, Any]:
+    """
+    Convert CSV data (string) to a JSON string representation of a list of objects.
+
+    Args:
+        csv_string: The CSV data as a string.
+        delimiter: The delimiter character used in the CSV input (default: ',').
+
+    Returns:
+        A dictionary containing:
+            result_json: The resulting data as a JSON string.
+            error: Error message if conversion failed.
+    """
+    try:
+        csv_data = csv_string.strip()
+        if not csv_data:
+            return {"result_json": "[]", "error": None}
+
+        csv_file = io.StringIO(csv_data)
+        reader = csv.DictReader(csv_file, delimiter=delimiter)
+        original_fieldnames = reader.fieldnames
+
+        # Check for empty file after stripping header
+        if not original_fieldnames:
+            # If header was present but file only contained header or whitespace,
+            # DictReader might parse fieldnames but list(reader) will be empty.
+            # Check if only one line (header) existed in original stripped data.
+            if len(csv_data.splitlines()) <= 1:
+                return {"result_json": "[]", "error": None}
+            else:
+                # This case is less likely if DictReader got fieldnames, but defensive
+                return {"result_json": "", "error": "CSV header found but no data rows could be parsed."}
+
+        # Attempt to read all rows. Exceptions will be caught below.
+        result_list = list(reader)
+
+        # Process results: Strip keys and values
+        cleaned_fieldnames = [field.strip() for field in original_fieldnames]
+        final_data = []
+        for row_dict in result_list:
+            new_row = {}
+            for i, cleaned_key in enumerate(cleaned_fieldnames):
+                original_key = original_fieldnames[i]
+                value = row_dict.get(original_key)
+                if isinstance(value, str):
+                    value = value.strip()
+                new_row[cleaned_key] = value
+            final_data.append(new_row)
+
+        json_result_str = json.dumps(final_data, indent=2)
+        return {"result_json": json_result_str, "error": None}
+
+    except Exception as e:
+        # Catch ALL errors during CSV processing (including csv.Error, sniffing issues, etc.)
+        logger.warning(f"CSV to JSON conversion failed: {e}")
+        # Return a generic error message
+        return {"result_json": "", "error": f"Failed to process CSV: {str(e)}"}

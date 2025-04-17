@@ -933,20 +933,27 @@ result = await session.call_tool("generate_ipv6_ula", {"global_id": "a1b2c3d4e5"
 # result: {"ula_address": "fda1:b2c3:d4e5:abcd::1", "global_id": "a1b2c3d4e5", "subnet_id": "abcd", "error": null}
 ```
 
-### JSON to CSV Converter
+### JSON <=> CSV Converter
 
-Convert JSON strings (representing a list of objects) to CSV strings.
+Convert between JSON strings (representing a list of objects) and CSV strings.
 
-**Tool Name:** `json_to_csv`
+**Tool Names:** `json_to_csv`, `csv_to_json`
 
-**Parameters:**
+**Parameters (`json_to_csv`):**
 - `json_string`: The JSON string to convert. Must be an array/list of objects or a single object.
 - `delimiter`: The delimiter character for the CSV output (default: ',').
 
-**Example:**
+**Parameters (`csv_to_json`):**
+- `csv_string`: The CSV data as a string.
+- `delimiter`: The delimiter character used in the CSV input (default: ',').
+
+**Examples:**
 ```python
 csv_result = await session.call_tool("json_to_csv", {"json_string": '[{"a": 1, "b": 2}, {"a": 3, "b": 4}]'})
 # csv_result: {"result_csv": "a,b\r\n1,2\r\n3,4\r\n", "error": null}
+
+json_result = await session.call_tool("csv_to_json", {"csv_string": "a,b\n1,2\n3,4"})
+# json_result: {"result_json": "[{\"a\": \"1\", \"b\": \"2\"}, {\"a\": \"3\", \"b\": \"4\"}]", "error": null}
 ```
 
 ## Available Resources
