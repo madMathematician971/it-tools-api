@@ -1,36 +1,44 @@
-from fastapi import APIRouter, HTTPException, status
-from lorem_text import lorem  # Import lorem-text
+import logging
 
-from models.lorem_models import LoremInput, LoremOutput, LoremType
+from fastapi import APIRouter, HTTPException, status
+
+from mcp_server.tools.lorem_generator import generate_lorem as generate_lorem_tool
+from models.lorem_models import LoremInput, LoremOutput  # Keep models
 
 router = APIRouter(prefix="/api/lorem", tags=["Lorem Ipsum"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/generate", response_model=LoremOutput)
-async def generate_lorem(payload: LoremInput):
-    """Generate Lorem Ipsum placeholder text."""
+async def generate_lorem_endpoint(payload: LoremInput):
+    """Generate Lorem Ipsum placeholder text using the MCP tool."""
     try:
-        if payload.lorem_type == LoremType.words:
-            # Generate count words, s=1 ensures single block
-            result_text = lorem.words(payload.count)
-        elif payload.lorem_type == LoremType.sentences:
-            # Call sentence() count times and join
-            sentences = [lorem.sentence() for _ in range(payload.count)]
-            result_text = " ".join(sentences)
-        elif payload.lorem_type == LoremType.paragraphs:
-            # Call paragraph() count times and join
-            paragraphs = [lorem.paragraph() for _ in range(payload.count)]
-            result_text = "\n\n".join(paragraphs)
-        else:
-            # Should be caught by Pydantic validation, but as a fallback
+        # Call the tool function
+        result = generate_lorem_tool(
+            lorem_type=payload.lorem_type.value, count=payload.count  # Pass enum value as string
+        )
+
+        # Check for errors from the tool
+        if result.get("error"):
+            logger.warning(f"Lorem Ipsum generation failed: {result['error']}")
+            # Assume tool validation errors are 400 Bad Request
+            if "Invalid lorem_type" in result["error"] or "Count must be" in result["error"]:
+                status_code = status.HTTP_400_BAD_REQUEST
+            else:
+                status_code = status.HTTP_500_INTERNAL_SERVER_ERROR  # For unexpected tool errors
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid lorem_type specified.",
+                status_code=status_code,
+                detail=result["error"],
             )
 
-        return {"text": result_text}
+        # Return successful result (tool output matches LoremOutput)
+        return result
+
+    except HTTPException:  # Re-raise
+        raise
     except Exception as e:
-        print(f"Error generating Lorem Ipsum: {e}")
+        # Catch unexpected errors outside the tool call
+        logger.error(f"Error in Lorem Ipsum endpoint: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error during Lorem Ipsum generation",

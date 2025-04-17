@@ -956,6 +956,25 @@ json_result = await session.call_tool("csv_to_json", {"csv_string": "a,b\n1,2\n3
 # json_result: {"result_json": "[{\"a\": \"1\", \"b\": \"2\"}, {\"a\": \"3\", \"b\": \"4\"}]", "error": null}
 ```
 
+### Lorem Ipsum Generator
+
+Generate Lorem Ipsum placeholder text.
+
+**Tool Name:** `generate_lorem`
+
+**Parameters:**
+- `lorem_type`: The type of text to generate ('words', 'sentences', 'paragraphs').
+- `count`: The number of words, sentences, or paragraphs to generate (default: 1).
+
+**Example:**
+```python
+result = await session.call_tool("generate_lorem", {
+    "lorem_type": "paragraphs", 
+    "count": 2
+})
+# result: {"text": "Lorem ipsum...\n\nDolor sit amet...", "error": null}
+```
+
 ## Available Resources
 
 ### Base Converter Resource

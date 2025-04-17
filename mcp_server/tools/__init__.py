@@ -29,6 +29,7 @@ from mcp_server.tools.json_diff import json_diff
 from mcp_server.tools.json_formatter import format_json, minify_json
 from mcp_server.tools.jwt_processor import parse_jwt
 from mcp_server.tools.list_converter import convert_list
+from mcp_server.tools.lorem_generator import generate_lorem
 from mcp_server.tools.math_evaluator import evaluate_math
 from mcp_server.tools.phone_parser import parse_phone_number
 from mcp_server.tools.roman_numeral_converter import decode_from_roman, encode_to_roman
