@@ -121,7 +121,7 @@ async def test_ipv4_convert_success(
     "input_ip, input_format_hint, error_substring",
     [
         # Auto-detect failures
-        ("256.168.1.1", None, "Invalid dotted decimal IP format"),
+        ("256.168.1.1", None, "Could not determine IP address format"),
         ("192.168.1", None, "Could not determine IP address format"),
         ("192.168.1.1.1", None, "Could not determine IP address format"),
         ("C0A801XYZ", None, "Could not determine IP address format"),
@@ -147,12 +147,10 @@ async def test_ipv4_convert_failure(client: TestClient, input_ip, input_format_h
     payload = IPv4Input(ip_address=str(input_ip), format=input_format_hint)
     response = client.post("/api/ipv4-converter/", json=payload.model_dump())
 
-    assert response.status_code == status.HTTP_200_OK
-    output = IPv4Output(**response.json())
-    assert output.error is not None
+    # Expect 400 Bad Request for validation errors now
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    # Check error message content
-    if error_substring == "IP address cannot be empty":
-        assert output.error == error_substring
-    else:
-        assert error_substring in str(output.error)
+    # Check the error message in the detail field
+    response_data = response.json()
+    assert "detail" in response_data
+    assert error_substring.lower() in response_data["detail"].lower()

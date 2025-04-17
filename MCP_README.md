@@ -412,6 +412,48 @@ result = await session.call_tool("calculate_eta", {
 # }
 ```
 
+### IPv4 Address Converter
+
+Converts an IPv4 address between dotted decimal, integer, hexadecimal, and binary formats. It can auto-detect the input format or use an optional hint.
+
+**API Endpoint:** `/api/ipv4-converter/`
+**MCP Tool Function:** `mcp_server.tools.ipv4_converter.convert_ipv4`
+
+**Parameters:**
+- `ip_address`: The IP address string (e.g., "192.168.1.1", "3232235777", "0xC0A80101").
+- `format_hint`: Optional hint (`dotted`, `decimal`, `hex`, `binary`) to specify input format.
+
+**Example (Auto-detect):**
+```python
+result = await session.call_tool("convert_ipv4", {
+    "ip_address": "192.168.1.1"
+})
+# result: {
+#   "original": "192.168.1.1",
+#   "dotted_decimal": "192.168.1.1",
+#   "decimal": 3232235777,
+#   "hexadecimal": "0xC0A80101",
+#   "binary": "11000000101010000000000100000001",
+#   "error": null
+# }
+```
+
+**Example (With Hint):**
+```python
+result = await session.call_tool("convert_ipv4", {
+    "ip_address": "C0A80101",
+    "format_hint": "hex"
+})
+# result: {
+#   "original": "C0A80101",
+#   "dotted_decimal": "192.168.1.1",
+#   "decimal": 3232235777,
+#   "hexadecimal": "0xC0A80101",
+#   "binary": "11000000101010000000000100000001",
+#   "error": null
+# }
+```
+
 ### Phone Number Parser
 
 Parse, validate, and format a phone number using the phonenumbers library.

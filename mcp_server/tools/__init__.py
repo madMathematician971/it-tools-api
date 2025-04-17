@@ -20,6 +20,7 @@ from mcp_server.tools.hash_calculator import calculate_hash
 from mcp_server.tools.hmac_calculator import calculate_hmac
 from mcp_server.tools.html_entities_processor import decode_html_entities, encode_html_entities
 from mcp_server.tools.iban_processor import validate_iban
+from mcp_server.tools.ipv4_converter import convert_ipv4
 from mcp_server.tools.ipv4_subnet_calculator import calculate_ipv4_subnet
 from mcp_server.tools.json_diff import json_diff
 from mcp_server.tools.json_formatter import format_json, minify_json
