@@ -27,11 +27,10 @@ async def markdown_to_html_endpoint(payload: MarkdownInput):
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid input: Markdown data must be a string.",
                 )
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Internal server error during Markdown conversion: {result['error']}",
-                )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Internal server error during Markdown conversion: {result['error']}",
+            )
 
         html_content = result.get("html_string")
         if html_content is None:
