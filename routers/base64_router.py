@@ -5,11 +5,8 @@ import logging
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 
-from models.base64_models import (  # Relative import
-    Base64DecodeFileRequest,
-    InputString,
-    OutputString,
-)
+from mcp_server.tools import base64_decode_string, base64_encode_string
+from models.base64_models import Base64DecodeFileRequest, InputString, OutputString
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -22,9 +19,7 @@ router = APIRouter(prefix="/api/base64", tags=["Base64"])
 async def base64_encode(payload: InputString):
     """Encode a string to Base64."""
     try:
-        input_bytes = payload.input.encode("utf-8")
-        encoded_bytes = base64.b64encode(input_bytes)
-        return {"result": encoded_bytes.decode("utf-8")}
+        return {"result": base64_encode_string(payload.input)["result_string"]}
     except Exception as e:
         print(f"Error encoding Base64: {e}")
         raise HTTPException(
@@ -37,20 +32,18 @@ async def base64_encode(payload: InputString):
 async def base64_decode(payload: InputString):
     """Decode a Base64 string."""
     try:
-        input_bytes = payload.input.encode("utf-8")
-        missing_padding = len(input_bytes) % 4
-        if missing_padding:
-            input_bytes += b"=" * (4 - missing_padding)
-        decoded_bytes = base64.b64decode(input_bytes, validate=True)
-        return {"result": decoded_bytes.decode("utf-8")}
-    except (base64.binascii.Error, UnicodeDecodeError) as e:
-        print(f"Error decoding Base64: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid Base64 input string.",
-        )
+        result_dict = base64_decode_string(payload.input)
+        if result_dict["error"]:
+            logger.warning(f"Invalid Base64 input provided: {result_dict['error']}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid Base64 input string: {result_dict['error']}",
+            )
+        return {"result": result_dict["result_string"]}
+    except HTTPException:  # Re-raise HTTPException if already raised
+        raise
     except Exception as e:
-        print(f"Error decoding Base64: {e}")
+        logger.error(f"Error decoding Base64: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error during decoding",

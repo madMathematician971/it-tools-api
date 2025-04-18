@@ -3,7 +3,7 @@ from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 
 # Assuming models are defined or imported correctly
-from models.phone_models import PhoneInput, PhoneOutput
+from models.phone_models import PhoneInput
 from routers.phone_router import router as phone_router
 
 
@@ -114,11 +114,16 @@ async def test_parse_phone_number_success_and_validity(
     payload = PhoneInput(phone_number_string=phone_number_string, default_country=default_country)
     response = client.post("/api/phone/parse", json=payload.model_dump())
 
-    assert response.status_code == status.HTTP_200_OK
-    output_dict = response.json()
-    # Only compare the keys present in the expected dictionary
-    for key, value in expected.items():
-        assert output_dict.get(key) == value, f"Mismatch on key: {key}"
+    if expected.get("error") is not None:
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        response_data = response.json()
+        assert "detail" in response_data
+        assert expected["error"].lower() in response_data["detail"].lower()
+    else:
+        assert response.status_code == status.HTTP_200_OK
+        output_dict = response.json()
+        for key, value in expected.items():
+            assert output_dict.get(key) == value, f"Mismatch on key: {key}"
 
 
 @pytest.mark.parametrize(
@@ -126,7 +131,7 @@ async def test_parse_phone_number_success_and_validity(
     [
         ("not a number", None, "Parsing failed"),
         ("+1 123 456 789a", None, "Number is not valid."),
-        ("", None, "Parsing failed"),
+        ("", None, "Parsing failed: (1) The string supplied did not seem to be a phone number."),
     ],
 )
 @pytest.mark.asyncio
@@ -137,9 +142,7 @@ async def test_parse_phone_number_parse_error(
     payload = PhoneInput(phone_number_string=phone_number_string, default_country=default_country)
     response = client.post("/api/phone/parse", json=payload.model_dump())
 
-    assert response.status_code == status.HTTP_200_OK
-    output = PhoneOutput(**response.json())
-    assert output.is_valid is False
-    assert output.error is not None
-    # Check for the expected error message (case-insensitive)
-    assert error_substring.lower() in output.error.lower()
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    response_data = response.json()
+    assert "detail" in response_data
+    assert error_substring.lower() in response_data["detail"].lower()

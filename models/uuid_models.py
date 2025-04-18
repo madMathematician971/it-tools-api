@@ -1,4 +1,16 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
+
+
+class UuidInput(BaseModel):
+    namespace: Optional[str] = Field(None, description="Namespace UUID for V3/V5 generation")
+    name: Optional[str] = Field(None, description="Name string for V3/V5 generation")
+
+
+class UuidOutput(BaseModel):
+    version: int
+    uuid_str: str = Field(..., alias="uuid")
 
 
 class UuidResponse(BaseModel):

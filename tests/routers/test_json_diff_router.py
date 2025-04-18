@@ -84,17 +84,11 @@ async def test_json_diff(
     response = client.post("/api/json-diff/", json=payload.model_dump())
 
     if expect_error:
-        # Expecting an error response (either 400 from endpoint or 200 with error field)
-        if "Invalid output format" in expect_error:
-            assert response.status_code == status.HTTP_400_BAD_REQUEST
-            assert expect_error in response.json()["detail"]
-        else:
-            # API returns 200 OK with error message in body for JSON parsing errors
-            assert response.status_code == status.HTTP_200_OK
-            output = JsonDiffOutput(**response.json())
-            assert output.error is not None
-            assert expect_error in output.error
-            assert output.diff == ""
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        response_data = response.json()
+        assert "detail" in response_data
+        # Check if the expected error message is a substring of the detail
+        assert expect_error in response_data["detail"]
     else:
         # Expecting successful diff generation
         assert response.status_code == status.HTTP_200_OK

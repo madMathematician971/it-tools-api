@@ -1,22 +1,43 @@
-from typing import Any, Dict, List, Optional
+import json
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class JwtInput(BaseModel):
-    jwt_string: str = Field(..., description="The JWT token string")
-    secret_or_key: Optional[str] = Field(
+    jwt_string: str = Field(..., description="The JWT string to decode.")
+    secret_or_key: str | None = Field(
         None,
-        description="Optional secret (for HMAC) or public key (for RSA/EC) PEM string for signature verification",
+        description="The secret (for HS*) or public key (for RS*/ES*) for signature verification.",
     )
-    algorithms: Optional[List[str]] = Field(
+    algorithms: list[str] | None = Field(
         None,
-        description="Optional list of allowed algorithms for verification (e.g., ['HS256', 'RS256'])",
+        description="List of allowed algorithms (e.g., ['HS256', 'HS512']). Required if verifying.",
     )
 
 
 class JwtOutput(BaseModel):
-    header: Optional[Dict[str, Any]] = None
-    payload: Optional[Dict[str, Any]] = None
-    signature_verified: Optional[bool] = None
-    error: Optional[str] = None
+    header: dict[str, Any] | None = Field(None, description="Decoded JWT header.")
+    payload: dict[str, Any] | None = Field(None, description="Decoded JWT payload.")
+    signature_verified: bool | None = Field(
+        None,
+        description="Whether the signature was successfully verified (True/False) or verification was not attempted (None).",
+    )
+    error: str | None = Field(None, description="Error message if parsing or verification failed.")
+
+    @field_validator("header", "payload", mode="before")
+    @classmethod
+    def _validate_json(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                raise ValueError("Invalid JSON string")
+        return v
+
+    @field_validator("header", "payload", mode="before")
+    @classmethod
+    def empty_dict_to_none(cls, value):
+        if value == {}:
+            return None
+        return value

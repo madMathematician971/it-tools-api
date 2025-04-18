@@ -1,76 +1,60 @@
-from colour import Color
+import logging
+
 from fastapi import APIRouter, HTTPException, status
 
+from mcp_server.tools.color_converter import convert_color
 from models.color_converter_models import ColorConvertInput, ColorConvertOutput
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/color", tags=["Color Converter"])
 
 
 @router.post("/convert", response_model=ColorConvertOutput)
-async def color_convert(payload: ColorConvertInput):
-    """Convert color between different formats (hex, rgb, hsl, hsv, web names)."""
+async def color_convert_endpoint(payload: ColorConvertInput):
+    """Convert color between different formats using the tool."""
     try:
-        c = Color(payload.input_color)
-    except Exception as e:
-        print(f"Error parsing input color '{payload.input_color}': {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Could not parse input color: '{payload.input_color}'",
-        )
+        result = convert_color(input_color=payload.input_color, target_format=payload.target_format)
 
-    target = payload.target_format.lower()
-    result: str | float  # Use | for Union in type hint
+        if result["error"]:
+            tool_error_msg = result["error"]
+            # Check for specific user-facing errors from the tool
+            if (
+                "Could not parse input color" in tool_error_msg
+                or "Input color string cannot be empty" in tool_error_msg
+            ):
+                logger.warning(f"Invalid color input/parse error: {payload.input_color} - Tool Error: {tool_error_msg}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    # Return the specific error from the tool
+                    detail=tool_error_msg,
+                )
+            if "Unsupported target_format" in tool_error_msg:
+                logger.warning(f"Unsupported target format requested: {payload.target_format}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    # Return the specific error from the tool
+                    detail=tool_error_msg,
+                )
 
-    try:
-        if target == "hex":
-            result = c.hex
-        elif target == "hex_verbose":
-            result = c.hex_l
-        elif target == "rgb":
-            r, g, b = [int(x * 255) for x in c.rgb]
-            result = f"rgb({r}, {g}, {b})"
-        elif target == "rgb_fraction":
-            result = str(c.rgb)
-        elif target == "hsl":
-            h_deg = round(c.hsl[0] * 360)
-            s, l_ = [round(x * 100) for x in c.hsl[1:]]
-            result = f"hsl({h_deg}, {s}%, {l_}%)"
-        elif target == "hsv":
-            h_deg = round(c.hsv[0] * 360)
-            s, v = [round(x * 100) for x in c.hsv[1:]]
-            result = f"hsv({h_deg}, {s}%, {v}%)"
-        elif target == "web":
-            result = c.web
-        elif target == "luminance":
-            result = c.luminance
-        else:
+            # Log other internal tool errors and return a generic 500
+            logger.error(f"Color converter tool returned an unexpected internal error: {tool_error_msg}")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported target_format: '{payload.target_format}'",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal server error during color conversion",  # Generic message for internal errors
             )
 
-        parsed_hex = c.hex_l
-        r_int, g_int, b_int = [int(x * 255) for x in c.rgb]
-        parsed_rgb = f"rgb({r_int}, {g_int}, {b_int})"
-        h_deg_hsl, s_hsl, l_hsl = (
-            round(c.hsl[0] * 360),
-            round(c.hsl[1] * 100),
-            round(c.hsl[2] * 100),
-        )
-        parsed_hsl = f"hsl({h_deg_hsl}, {s_hsl}%, {l_hsl}%)"
+        # The dictionary returned by the tool matches the fields expected by ColorConvertOutput
+        return ColorConvertOutput(**result)
 
-        return {
-            "result": result,
-            "input_color": payload.input_color,
-            "target_format": payload.target_format,
-            "parsed_hex": parsed_hex,
-            "parsed_rgb": parsed_rgb,
-            "parsed_hsl": parsed_hsl,
-        }
-
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as e:
-        print(f"Error converting color '{payload.input_color}' to '{target}': {e}")
+        # Catch any unexpected exceptions during the tool call or processing
+        logger.error(f"Unexpected error in /color/convert endpoint: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Internal server error during color conversion to {target}",
+            detail=f"Internal server error during color conversion to {payload.target_format}",
         )

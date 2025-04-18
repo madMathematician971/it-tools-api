@@ -1,52 +1,55 @@
-import re
+import logging
 
 from fastapi import APIRouter, HTTPException, status
 
+from mcp_server.tools.email_processor import normalize_email
 from models.email_models import EmailInput, EmailNormalizeOutput
 
 router = APIRouter(prefix="/api/email", tags=["Email"])
 
+logger = logging.getLogger(__name__)
+
 
 @router.post("/normalize", response_model=EmailNormalizeOutput)
-async def email_normalize(payload: EmailInput):
-    """Normalize an email address based on common provider rules (e.g., Gmail)."""
-    email = payload.email.strip().lower()
-
-    # Use a more comprehensive regex for email validation (simplified RFC 5322)
-    email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-    if not re.match(email_regex, email):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email format.")
-
-    # Additional checks for common invalid patterns not caught by basic regex
-    # Note: We don't check for '+.' here as it's handled by normalization rules
-    local_part_for_check, domain_for_check = email.split("@", 1)
-    if (
-        ".." in local_part_for_check
-        or local_part_for_check.startswith(".")
-        or local_part_for_check.endswith(".")
-        or ".." in domain_for_check
-        or domain_for_check.startswith(".")
-        or domain_for_check.endswith(".")
-        or "(" in email
-        or ")" in email
-    ):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email characters or structure.")
+async def email_normalize_endpoint(payload: EmailInput):
+    """Normalize an email address using the MCP tool."""
+    email_address = payload.email
 
     try:
-        local_part, domain = email.split("@", 1)
+        # Call the tool function
+        result = normalize_email(email_address=email_address)
 
-        if domain in ["gmail.com", "googlemail.com", "google.com"]:
-            local_part = local_part.replace(".", "")
-            local_part = local_part.split("+", 1)[0]
-        elif domain in ["outlook.com", "hotmail.com", "live.com"]:
-            local_part = local_part.split("+", 1)[0]
+        # Check for errors from the tool
+        if error := result.get("error"):
+            logger.warning(f"Email normalization tool failed for '{email_address}': {error}")
+            # Most tool errors indicate bad input
+            if "Internal server error" in error:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Tool error: {error}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid input: {error}")
 
-        normalized_email = f"{local_part}@{domain}"
+        # Get normalized email
+        normalized_email = result.get("normalized_email")
+        if normalized_email is None:
+            # Should not happen if error is None
+            logger.error("Tool returned no error but also no normalized email.")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal error: Tool failed to produce normalized email.",
+            )
 
-        return {"normalized_email": normalized_email, "original_email": payload.email}
+        # Return the original and normalized email
+        return {
+            "normalized_email": normalized_email,
+            "original_email": result.get("original_email"),  # Use original from tool result
+        }
+
+    except HTTPException as e:
+        # Re-raise HTTP exceptions directly
+        raise e
     except Exception as e:
-        print(f"Error normalizing email: {e}")
+        # Catch unexpected errors
+        logger.error(f"Unexpected error normalizing email: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error during email normalization",
+            detail=f"An unexpected error occurred: {str(e)}",
         )

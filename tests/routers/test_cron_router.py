@@ -70,8 +70,14 @@ async def test_cron_describe_invalid_input(client: TestClient, invalid_cron_stri
         # Other invalid strings raise ValueError, caught and returned as 400
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         error_detail = response.json()["detail"]
-        # Actual error message from ValueError is generic
-        assert "invalid cron string format." in error_detail.lower()
+        # Check for specific parts of the more detailed error messages
+        if invalid_cron_string == "":
+            assert "must have 5 or 6 fields" in error_detail
+        elif invalid_cron_string == "a b c d e":
+            assert "is not acceptable" in error_detail  # from croniter
+        else:
+            # Default check for other potential errors
+            assert "invalid cron string" in error_detail.lower()
 
 
 # --- Test Cron Validation ---
