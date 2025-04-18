@@ -1,0 +1,49 @@
+name: Build
+
+on:
+  workflow_run:
+    workflows:
+      - CI StaticAnalysis
+    types:
+      - completed
+
+jobs:
+  build:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      (
+        startsWith(github.event.workflow_run.head_branch, 'main') ||
+        startsWith(github.event.workflow_run.head_branch, 'develop') ||
+        startsWith(github.event.workflow_run.head_branch, 'release/')
+      )
+    environment: staging
+    name: Build FastMCP Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv and only dev dependencies
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          uv sync --only-dev
+
+      - name: Extract version
+        id: extract_version
+        run: |
+          echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build FastMCP image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: fastmcp
+          push: false
+          tags: |
+            madmathematician971/mcp-it-tools:${{ env.VERSION }}
+            madmathematician971/mcp-it-tools:latest
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

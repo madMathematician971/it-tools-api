@@ -1,0 +1,31 @@
+name: Bump Patch Version
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  bump-patch:
+    name: Bump patch version (Poetry)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install dev dependencies
+        run: uv sync --only-dev
+      - name: Bump version
+        run: |
+          poetry version patch
+          echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
+      - name: Commit & push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add pyproject.toml
+          git commit -m "ci: bump patch version to v${{ env.VERSION }} [skip ci]" || echo "No changes"
+          git tag v${{ env.VERSION }} || echo "Tag exists"
+          git push origin HEAD:develop --follow-tags

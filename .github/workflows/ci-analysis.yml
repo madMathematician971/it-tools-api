@@ -1,0 +1,54 @@
+name: Static Analysis
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Static Code Analysis
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.12-slim
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        run: |
+          apt-get update && apt-get install -y curl
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Install dependencies (including dev)
+        run: uv sync --all-extras
+
+      - name: Lint with Black
+        run: uv run black --check .
+
+      - name: Check import sorting with isort
+        run: uv run isort --check .
+
+      - name: Lint with Pylint
+        run: uv run pylint **/*.py
+
+  pytest:
+    name: Pytest
+    needs: lint
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.12-slim
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        run: |
+          apt-get update && apt-get install -y curl
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Install dependencies (including dev)
+        run: uv sync --all-extras
+
+      - name: Run tests
+        run: uv run pytest -v 
