@@ -41,7 +41,7 @@ jobs:
       - name: Extract version
         id: extract_version
         run: |
-          echo "VERSION=$(uv run poetry version -s)" >> $GITHUB_OUTPUT
+          echo "VERSION=$(uv run --no-sync poetry version -s)" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
