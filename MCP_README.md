@@ -975,6 +975,55 @@ result = await session.call_tool("generate_lorem", {
 # result: {"text": "Lorem ipsum...\n\nDolor sit amet...", "error": null}
 ```
 
+### MAC Address Lookup
+
+Lookup vendor information for a given MAC address or OUI.
+
+**Tool Name:** `lookup_mac_vendor`
+
+**Parameters:**
+- `mac_address`: The MAC address string (e.g., "00:1A:2B:3C:4D:5E", "00-1A-2B-3C-4D-5E", "001A2B3C4D5E", "001A.2B3C.4D5E").
+
+**Returns:**
+- `oui`: The OUI part of the MAC address (string, 6 hex chars) or None.
+- `company`: The vendor name (string) or None if not found.
+- `is_private`: Whether the MAC is locally administered (boolean) or None if indeterminable.
+- `error`: Error message if lookup failed.
+
+**Example:**
+```python
+result = await session.call_tool("lookup_mac_vendor", {"mac_address": "00:01:42:11:22:33"})
+# result: {"oui": "000142", "company": "Cisco Systems, Inc", "is_private": false, "error": null}
+
+result_private = await session.call_tool("lookup_mac_vendor", {"mac_address": "02-00-00-00-00-01"})
+# result_private: {"oui": "020000", "company": None, "is_private": true, "error": null}
+
+result_not_found = await session.call_tool("lookup_mac_vendor", {"mac_address": "FFFFFF000000"})
+# result_not_found: {"oui": "FFFFFF", "company": None, "is_private": false, "error": "Vendor not found..."}
+```
+
+### Markdown to HTML Converter
+
+Convert a Markdown string to HTML using the `python-markdown` library with 'fenced_code' and 'tables' extensions enabled.
+
+**Tool Name:** `render_markdown`
+
+**Parameters:**
+- `markdown_string`: The Markdown string to convert.
+
+**Returns:**
+- `html_string`: The converted HTML string.
+- `error`: An error message if conversion failed, otherwise None.
+
+**Example:**
+```python
+result = await session.call_tool("render_markdown", {"markdown_string": "# Hello\\n\\nThis is **bold**."})
+# result: {"html_string": "<h1>Hello</h1>\\n<p>This is <strong>bold</strong>.</p>", "error": null}
+
+result_error = await session.call_tool("render_markdown", {"markdown_string": 123})
+# result_error: {"html_string": null, "error": "Input must be a string."}
+```
+
 ## Available Resources
 
 ### Base Converter Resource
