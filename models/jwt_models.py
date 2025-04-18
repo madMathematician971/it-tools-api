@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
@@ -25,6 +26,18 @@ class JwtOutput(BaseModel):
     error: str | None = Field(None, description="Error message if parsing or verification failed.")
 
     @field_validator("header", "payload", mode="before")
-    def empty_dict_to_none(self, value):
-        # Ensure empty dicts are treated as None for consistency if needed,
-        return value if value else None
+    @classmethod
+    def _validate_json(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                raise ValueError("Invalid JSON string")
+        return v
+
+    @field_validator("header", "payload", mode="before")
+    @classmethod
+    def empty_dict_to_none(cls, value):
+        if value == {}:
+            return None
+        return value
