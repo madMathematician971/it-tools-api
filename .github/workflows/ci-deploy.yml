@@ -29,14 +29,14 @@ jobs:
       - name: Extract version
         id: extract_version
         run: |
-          echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
+          echo "VERSION=$(uv run --no-sync poetry version -s)" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
         with:
-          tag_name: v${{ env.VERSION }}
-          release_name: v${{ env.VERSION }}
-          body: "Release v${{ env.VERSION }}"
+          tag_name: v${{ steps.extract_version.outputs.VERSION }}
+          release_name: v${{ steps.extract_version.outputs.VERSION }}
+          body: "Release v${{ steps.extract_version.outputs.VERSION }}"
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 
@@ -44,8 +44,8 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git checkout -b "release/v${{ env.VERSION }}"
-          git push origin "release/v${{ env.VERSION }}"
+          git checkout -b "release/v${{ steps.extract_version.outputs.VERSION }}"
+          git push origin "release/v${{ steps.extract_version.outputs.VERSION }}"
 
   deploy_images:
     name: Deploy Docker Images
@@ -65,7 +65,7 @@ jobs:
         - name: Extract version
           id: extract_version
           run: |
-              echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
+            echo "VERSION=$(uv run --no-sync poetry version -s)" >> $GITHUB_OUTPUT
 
         - name: Log in to Docker Hub
           uses: docker/login-action@v2
@@ -84,4 +84,4 @@ jobs:
             push: true
             tags: |
               madmathematician971/mcp-it-tools-fastmcp:latest
-              madmathematician971/mcp-it-tools-fastmcp:${{ env.VERSION }}
+              madmathematician971/mcp-it-tools-fastmcp:${{ steps.extract_version.outputs.VERSION }}
