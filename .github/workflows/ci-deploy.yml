@@ -37,5 +37,5 @@ jobs:
             target: fastmcp
             push: true
             tags: |
-              madmathematician971/mcp-it-tools-fastmcp:latest
-              madmathematician971/mcp-it-tools-fastmcp:${{ steps.extract_version.outputs.VERSION }}
+              madmathematician971/mcp-it-tools:latest
+              madmathematician971/mcp-it-tools:${{ steps.extract_version.outputs.VERSION }}
