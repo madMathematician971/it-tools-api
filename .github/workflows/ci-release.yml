@@ -44,5 +44,5 @@ jobs:
           release_name: v${{ steps.extract_version.outputs.VERSION }}
           body: "Release v${{ steps.extract_version.outputs.VERSION }}"
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }} # Use the generated App token
                 
