@@ -1,6 +1,6 @@
 [project]
 name = "it-tools-api"
-version = "0.1.4"
+version = "0.1.5"
 description = "API for IT Tools"
 authors = [
     { name = "Anton Dmytrenko", email = "48_decorum.row@icloud.com" },
