@@ -47,4 +47,4 @@ jobs:
           git commit -m "ci: bump patch version to v${{ steps.bump_version.outputs.VERSION }} [skip ci]" || echo "No changes"
 
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
-          git push origin HEAD:main
+          git push origin main
