@@ -75,12 +75,10 @@ token_invalid_format = "this.is.not.a.jwt"
             token_hs256,
             SECRET_KEY,
             [ALGORITHM_RS256],
-            "Error during verification process: The specified alg value is not allowed",
+            "Signature verification failed: The specified alg value is not allowed",
             False,
             payload_data,
         ),
-        # RS256 - Valid signature (using placeholder - this test will likely fail verification without real keys)
-        # (token_rs256_placeholder, public_key_pem, [ALGORITHM_RS256], None, True, payload_data), # Uncomment if using real keys
         # RS256 - No key provided (decode only)
         (token_rs256_placeholder, None, None, None, None, payload_data),
         # RS256 - Wrong key (using HS key for RS token)
@@ -88,7 +86,7 @@ token_invalid_format = "this.is.not.a.jwt"
             token_rs256_placeholder,
             SECRET_KEY,
             [ALGORITHM_RS256],
-            "Error during verification process",
+            "Signature verification failed: ('Could not deserialize key data",
             False,
             payload_data,
         ),
@@ -111,32 +109,26 @@ async def test_parse_jwt(
     payload = JwtInput(jwt_string=jwt_string, secret_or_key=secret_or_key, algorithms=algorithms)
     response = client.post("/api/jwt/parse", json=payload.model_dump())
 
-    assert response.status_code == status.HTTP_200_OK
-    output_dict = response.json()
-    # Recreate the model to handle Optional fields correctly
-    output = JwtOutput(**output_dict)
-
     if expected_error:
-        assert output.error is not None
-        assert expected_error in output.error
-        # If verification failed, signature_verified should be False (unless header/payload parse failed first)
-        if "Signature" in expected_error or "verification" in expected_error:
-            assert output.signature_verified is False
-        if "header" in expected_error:
-            assert output.header is None
-        if "payload" in expected_error:
-            assert output.payload is None
+        # Expecting 400 Bad Request when the tool returns an error
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        response_data = response.json()
+        assert "detail" in response_data
+        assert expected_error in response_data["detail"]
+        # Optional: Can add more specific checks based on the error type if needed
+        # For example, check if output.signature_verified is False when expected_error contains "Signature"
+
     else:
+        # Expecting 200 OK for successful parsing/verification
+        assert response.status_code == status.HTTP_200_OK
+        output = JwtOutput(**response.json())  # Check model parsing
         assert output.error is None
         assert output.header is not None
         assert output.payload is not None
-        # Compare payloads (ignoring 'exp' differences if subtle due to timing)
         if expected_payload:
-            # Deep comparison, maybe excluding 'exp' or using tolerance
             payload_copy = output.payload.copy()
             expected_copy = expected_payload.copy()
             payload_copy.pop("exp", None)
             expected_copy.pop("exp", None)
             assert payload_copy == expected_copy
-
         assert output.signature_verified == expect_verified

@@ -115,9 +115,9 @@ async def test_evaluate_math_failure(client: TestClient, expression: str, error_
     payload = MathEvalInput(expression=expression)
     response = client.post("/api/math/evaluate", json=payload.model_dump())
 
-    assert response.status_code == status.HTTP_200_OK  # API returns 200 OK with error in body
-    output = MathEvalOutput(**response.json())
-    assert output.result is None
-    assert output.error is not None
-    # Check if the expected substring exists within the actual error message, case-insensitive
-    assert error_substring.lower() in output.error.lower()
+    # Updated assertions for 400 Bad Request response
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    response_data = response.json()
+    assert "detail" in response_data
+    # Check if the expected error message substring is present in the detail field
+    assert error_substring.lower() in response_data["detail"].lower()

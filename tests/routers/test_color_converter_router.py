@@ -125,7 +125,6 @@ async def test_color_convert_invalid_target_format(client: TestClient):
     payload = ColorConvertInput(input_color="red", target_format="invalid-format")
     response = client.post("/api/color/convert", json=payload.model_dump())
 
-    # Expecting 500 based on observed behavior, even though internal error might be 400
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    # Optionally, check if the internal error message is somehow logged or partially visible
-    # assert "Unsupported target_format".lower() in str(response.content).lower()
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "Unsupported target_format" in response.json()["detail"]
+    assert "invalid-format" in response.json()["detail"]

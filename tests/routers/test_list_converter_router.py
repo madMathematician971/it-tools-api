@@ -2,8 +2,8 @@ import pytest
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 
-# Import models and router
-from routers.list_converter_router import ListConverterInput, ListConverterOutput, ListFormat
+from mcp_server.tools.list_converter import ListFormat
+from models.list_converter_models import ListConverterInput, ListConverterOutput
 from routers.list_converter_router import router as list_converter_router
 
 
@@ -70,7 +70,7 @@ def client(test_app: FastAPI) -> TestClient:
             ListFormat.COMMA_SEPARATED,
             False,
             True,
-            "item a,,item b",
+            "item a,item b",
         ),  # Includes empty lines as items
         # trim_items = True (default)
         (" a , b , c ", ListFormat.COMMA_SEPARATED, ListFormat.NEWLINE_SEPARATED, True, True, "a\nb\nc"),

@@ -1,10 +1,8 @@
 import logging
-import shlex
-from typing import Any, Dict, List
 
-import yaml
 from fastapi import APIRouter, HTTPException, status
 
+from mcp_server.tools.docker_converter import convert_run_to_compose
 from models.docker_models import DockerRunToComposeInput, DockerRunToComposeOutput
 
 router = APIRouter(prefix="/api/docker", tags=["Docker"])
@@ -13,109 +11,47 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/run-to-compose", response_model=DockerRunToComposeOutput)
-async def docker_run_to_compose(payload: DockerRunToComposeInput):
-    """Convert a 'docker run' command into a docker-compose YAML structure using manual parsing."""
-    command_string = payload.docker_run_command.strip()
-    if not command_string.startswith("docker run"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Input must be a valid 'docker run ...' command.",
-        )
+async def docker_run_to_compose_endpoint(payload: DockerRunToComposeInput):
+    """Convert a 'docker run' command into a docker-compose YAML structure using the MCP tool."""
+    command_string = payload.docker_run_command
 
     try:
-        args_list = shlex.split(command_string[len("docker run") :].strip())
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error splitting command: {e}")
+        # Call the tool function
+        result = convert_run_to_compose(docker_run_command=command_string)
 
-    # --- Manual Argument Parsing ---
-    options: Dict[str, Any] = {
-        "ports": [],
-        "volumes": [],
-        "environment": [],
-        "name": None,
-        "restart": None,
-        "detach": False,
-    }
-    image = None
-    command: List[str] = []
-    i = 0
-    while i < len(args_list):
-        arg = args_list[i]
+        # Check if the tool returned an error
+        if error := result.get("error"):
+            logger.warning(f"Docker run to compose tool failed for command '{command_string}': {error}")
+            # Determine appropriate HTTP status code based on error type
+            if (
+                "Input must be a valid" in error
+                or "Missing value for option" in error
+                or "Error splitting command" in error
+                or "Missing image name" in error
+                or "Unrecognized option" in error
+            ):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid input: {error}")
+            # Default to internal server error for unexpected tool errors
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Tool error: {error}")
 
-        if arg in ("-p", "--publish"):
-            if i + 1 < len(args_list):
-                options["ports"].append(args_list[i + 1])
-                i += 1
-            else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Missing value for option {arg}")
-        elif arg in ("-v", "--volume"):
-            if i + 1 < len(args_list):
-                options["volumes"].append(args_list[i + 1])
-                i += 1
-            else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Missing value for option {arg}")
-        elif arg in ("-e", "--env"):
-            if i + 1 < len(args_list):
-                options["environment"].append(args_list[i + 1])
-                i += 1
-            else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Missing value for option {arg}")
-        elif arg == "--name":
-            if i + 1 < len(args_list):
-                options["name"] = args_list[i + 1]
-                i += 1
-            else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Missing value for option {arg}")
-        elif arg == "--restart":
-            if i + 1 < len(args_list):
-                options["restart"] = args_list[i + 1]
-                i += 1
-            else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Missing value for option {arg}")
-        elif arg in ("-d", "--detach"):
-            options["detach"] = True
-        elif not arg.startswith("-"):
-            # Assume first non-option is the image, rest is command
-            image = arg
-            command = args_list[i + 1 :]
-            break  # Stop processing arguments once image is found
-        else:
-            # Unknown option
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unrecognized option: {arg}")
+        # Return the YAML if successful
+        output_yaml = result.get("docker_compose_yaml")
+        if output_yaml is None:
+            # Should not happen if error is None, but safeguard
+            logger.error("Tool returned no error but also no YAML.")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal error: Tool failed to produce YAML."
+            )
 
-        i += 1
-
-    if not image:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing image name")
-
-    # --- Build Compose Dictionary ---
-    service_name = options["name"] if options["name"] else image.split(":")[0].split("/")[-1]
-    service_config: Dict[str, Any] = {"image": image}
-
-    if options["ports"]:
-        service_config["ports"] = options["ports"]
-    if options["volumes"]:
-        service_config["volumes"] = options["volumes"]
-    if options["environment"]:
-        service_config["environment"] = options["environment"]
-    if options["name"]:
-        service_config["container_name"] = options["name"]
-    if options["restart"]:
-        service_config["restart"] = options["restart"]
-    if command:
-        service_config["command"] = command
-
-    # Note: The -d / --detach flag doesn't usually map directly to compose, ignored here.
-
-    compose_dict = {"services": {service_name: service_config}}
-
-    # --- Generate YAML ---
-    try:
-        output_yaml = yaml.dump(compose_dict, default_flow_style=False, sort_keys=False)
         return {"docker_compose_yaml": output_yaml}
+
+    except HTTPException as e:
+        # Re-raise HTTP exceptions directly
+        raise e
     except Exception as e:
-        logger.error(f"Error generating YAML: {e}", exc_info=True)
+        # Catch unexpected errors during the process
+        logger.error(f"Unexpected error converting docker run command: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Internal server error during YAML generation: {str(e)}",
+            detail=f"An unexpected error occurred: {str(e)}",
         )

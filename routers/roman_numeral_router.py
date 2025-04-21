@@ -1,84 +1,76 @@
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 
+from mcp_server.tools.roman_numeral_converter import decode_from_roman as decode_from_roman_tool
+from mcp_server.tools.roman_numeral_converter import encode_to_roman as encode_to_roman_tool
 from models.roman_numeral_models import RomanDecodeInput, RomanEncodeInput, RomanOutput
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/roman-numerals", tags=["Roman Numeral Converter"])
 
-# Roman numeral mapping (descending order for easy conversion)
-ROMAN_MAP = [
-    (1000, "M"),
-    (900, "CM"),
-    (500, "D"),
-    (400, "CD"),
-    (100, "C"),
-    (90, "XC"),
-    (50, "L"),
-    (40, "XL"),
-    (10, "X"),
-    (9, "IX"),
-    (5, "V"),
-    (4, "IV"),
-    (1, "I"),
-]
-
-# Reverse mapping for decoding
-DECIMAL_MAP = {v: k for k, v in ROMAN_MAP}
-
 
 @router.post("/encode", response_model=RomanOutput)
-async def encode_to_roman(input_data: RomanEncodeInput):
+async def encode_to_roman_endpoint(input_data: RomanEncodeInput):
     """Convert an integer (1-3999) to its Roman numeral representation."""
     try:
-        number = input_data.number
-        result = ""
-        for value, numeral in ROMAN_MAP:
-            while number >= value:
-                result += numeral
-                number -= value
+        # Call the tool function
+        result_dict = encode_to_roman_tool(number=input_data.number)
 
-        return RomanOutput(input_value=input_data.number, result=result)
+        # Check for errors from the tool
+        if result_dict.get("error"):
+            logger.info(f"Roman numeral encoding failed: {result_dict['error']}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=result_dict["error"],
+            )
 
+        # Return successful result
+        # Tool result dict matches RomanOutput model
+        return result_dict
+
+    except HTTPException:  # Re-raise
+        raise
     except Exception as e:
         logger.error(f"Error encoding to Roman numeral: {e}", exc_info=True)
-        return RomanOutput(input_value=input_data.number, result="", error=f"Failed to encode: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error during encoding: {str(e)}"
+        )
 
 
 @router.post("/decode", response_model=RomanOutput)
-async def decode_from_roman(input_data: RomanDecodeInput):
+async def decode_from_roman_endpoint(input_data: RomanDecodeInput):
     """Convert a Roman numeral string to its integer representation."""
     try:
-        roman_numeral = input_data.roman_numeral.upper()
-        result = 0
-        i = 0
-        while i < len(roman_numeral):
-            # Check for two-character subtractive combinations (e.g., CM, IX)
-            if i + 1 < len(roman_numeral) and roman_numeral[i : i + 2] in DECIMAL_MAP:
-                result += DECIMAL_MAP[roman_numeral[i : i + 2]]
-                i += 2
-            # Otherwise, process single character
-            elif roman_numeral[i] in DECIMAL_MAP:
-                result += DECIMAL_MAP[roman_numeral[i]]
-                i += 1
-            else:
-                # Should be caught by validator, but good to have a fallback
-                raise ValueError(f"Invalid Roman numeral symbol: {roman_numeral[i]}")
+        # Call the tool function
+        result_dict = decode_from_roman_tool(roman_numeral=input_data.roman_numeral)
 
-        # Basic check for validity (e.g., converted value should re-encode to original)
-        # This helps catch some invalid inputs like 'IIII' or 'VV'
-        re_encoded = await encode_to_roman(RomanEncodeInput(number=result))
-        if re_encoded.result != roman_numeral:
-            raise ValueError("Roman numeral is not in standard form.")
+        # Check for errors from the tool
+        # Note: The tool returns a warning in the 'error' field for non-standard forms,
+        # but still provides the result. We might choose to return 200 OK with the warning.
+        # For now, treat any non-None 'error' as a 400 Bad Request for consistency.
+        if result_dict.get("error"):
+            # If it's just a non-standard warning, maybe log it differently?
+            log_level = logging.INFO if "Warning:" in result_dict["error"] else logging.WARNING
+            logger.log(log_level, f"Roman numeral decoding failed/warned: {result_dict['error']}")
+            # Decide if non-standard forms should be 400 or 200 with warning.
+            # Let's stick to 400 for any error/warning for now.
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=result_dict["error"],
+            )
 
-        return RomanOutput(input_value=input_data.roman_numeral, result=result)
+        # Return successful result
+        # Tool result dict matches RomanOutput model
+        return result_dict
 
-    except ValueError as ve:
-        return RomanOutput(input_value=input_data.roman_numeral, result=0, error=f"Invalid Roman numeral: {str(ve)}")
+    # Keep general exception handler
+    except HTTPException:  # Re-raise
+        raise
     except Exception as e:
         logger.error(f"Error decoding Roman numeral: {e}", exc_info=True)
-        return RomanOutput(input_value=input_data.roman_numeral, result=0, error=f"Failed to decode: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error during decoding: {str(e)}"
+        )

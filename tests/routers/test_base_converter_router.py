@@ -64,10 +64,10 @@ async def test_base_convert_success(
 @pytest.mark.parametrize(
     "number_string, input_base, output_base, expected_error_detail",
     [
-        ("12", 2, 10, "Invalid input: invalid literal for int() with base 2: '12'"),  # Invalid digit for base
-        ("G", 16, 10, "Invalid input: invalid literal for int() with base 16: 'G'"),  # Invalid hex digit
-        ("", 10, 16, "Invalid input: invalid literal for int() with base 10: ''"),  # Empty string
-        ("AF.B", 16, 10, "Invalid input: invalid literal for int() with base 16: 'AF.B'"),  # Non-integer input
+        ("12", 2, 10, "Invalid input: Invalid digits for base 2 in number: 12"),  # Invalid digit for base
+        ("G", 16, 10, "Invalid input: Invalid digits for base 16 in number: G"),  # Invalid hex digit
+        ("", 10, 16, "Invalid input: Invalid digits for base 10 in number: "),  # Empty string
+        ("AF.B", 16, 10, "Invalid input: Invalid digits for base 16 in number: AF.B"),  # Non-integer input
     ],
 )
 @pytest.mark.asyncio

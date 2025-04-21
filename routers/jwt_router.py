@@ -1,76 +1,45 @@
-from fastapi import APIRouter, HTTPException, status
-from jose import jwt
+import logging  # Import logging
 
+from fastapi import APIRouter, HTTPException, status
+
+# Import tool function
+from mcp_server.tools.jwt_processor import parse_jwt as parse_jwt_tool
 from models.jwt_models import JwtInput, JwtOutput
 
 router = APIRouter(prefix="/api/jwt", tags=["JWT"])
+logger = logging.getLogger(__name__)  # Set up logger
 
 
 @router.post("/parse", response_model=JwtOutput)
-async def parse_jwt(payload: JwtInput):
+async def parse_jwt_endpoint(payload: JwtInput):
     """Decode a JWT and optionally verify its signature."""
-    token = payload.jwt_string
-    secret = payload.secret_or_key
-    algorithms = payload.algorithms
-
     try:
-        # 1. Decode Header (Unverified)
-        try:
-            header = jwt.get_unverified_header(token)
-        except Exception as e:
-            return {"error": f"Failed to decode header: {e}"}  # Generic fallback
+        # Call the tool function
+        result_dict = parse_jwt_tool(
+            jwt_string=payload.jwt_string,
+            secret_or_key=payload.secret_or_key,
+            algorithms=payload.algorithms,
+        )
 
-        # 2. Decode Payload (Unverified)
-        try:
-            unverified_payload = jwt.get_unverified_claims(token)
-        except Exception as e:
-            return {
-                "header": header,
-                "error": f"Failed to decode payload: {e}",
-            }  # Generic fallback
+        # Check for errors returned by the tool
+        # Specific parsing/verification errors are handled by the tool
+        # The router mainly handles the 400 response based on tool's error field
+        if result_dict.get("error"):
+            logger.info(f"JWT parsing/verification failed: {result_dict['error']}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=result_dict["error"],
+            )
 
-        # 3. Verify Signature (Optional)
-        signature_verified = None
-        verification_error = None
-        verified_payload = None
+        # Return the successful result from the tool
+        # The tool's return dict matches the JwtOutput model structure
+        return result_dict
 
-        if secret:
-            try:
-                # Determine required algorithms based on header or input
-                alg = header.get("alg")
-                required_algorithms = algorithms if algorithms else ([alg] if alg else None)
-                if not required_algorithms:
-                    raise Exception("Algorithm missing in header and not provided in input.")
-
-                # Attempt verification
-                verified_payload = jwt.decode(
-                    token,
-                    secret,
-                    algorithms=required_algorithms,
-                    # Add options like audience, issuer validation if needed
-                    # options={"verify_aud": False, ...}
-                )
-                signature_verified = True
-            except Exception as e:
-                signature_verified = False
-                verification_error = f"Error during verification process: {e}"
-
-        # Determine final payload to return (verified if possible, else unverified)
-        final_payload = verified_payload if signature_verified else unverified_payload
-
-        output = {
-            "header": header,
-            "payload": final_payload,
-            "signature_verified": signature_verified,
-            "error": verification_error,  # Return verification error if verification was attempted
-        }
-        # Clean None values if preferred
-        return {k: v for k, v in output.items() if v is not None}
-
+    except HTTPException:  # Re-raise HTTPExceptions (e.g., 400 Bad Request)
+        raise
     except Exception as e:
-        print(f"Unexpected error parsing JWT: {e}")
-        # This should ideally not be reached if specific errors are caught
+        logger.error(f"Unexpected error in JWT endpoint: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error during JWT parsing",
+            detail=f"Internal server error during JWT processing: {str(e)}",
         )
