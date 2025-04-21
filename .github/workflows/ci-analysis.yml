@@ -10,8 +10,6 @@ on:
 
 jobs:
   lint:
-    if: >-
-      ${{!(github.event_name == 'push' && startsWith(github.event.head_commit.message, 'ci: bump'))}}
     name: Static Code Analysis
     runs-on: ubuntu-latest
     container:
@@ -39,8 +37,6 @@ jobs:
 
   pytest:
     name: Pytest
-    if: >-
-      ${{!(github.event_name == 'push' && startsWith(github.event.head_commit.message, 'ci: bump'))}}
     needs: lint
     runs-on: ubuntu-latest
     container:
