@@ -3,7 +3,7 @@ name: Bump Patch Version
 on:
   push:
     branches:
-      - develop
+      - main
 
 jobs:
   bump-patch:
@@ -45,7 +45,6 @@ jobs:
 
           git add pyproject.toml
           git commit -m "ci: bump patch version to v${{ steps.bump_version.outputs.VERSION }} [skip ci]" || echo "No changes"
-          git tag v${{ steps.bump_version.outputs.VERSION }} || echo "Tag exists"
 
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
-          git push origin HEAD:develop --follow-tags
+          git push origin HEAD:main

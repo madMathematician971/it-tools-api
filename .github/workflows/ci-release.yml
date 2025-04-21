@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows:
+      - Bump Patch Version
+    types:
+      - completed
+
+jobs:
+  create_release:
+    name: Create Release and Tag
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.VERSION_BUMP_APP_ID }}
+          private-key: ${{ secrets.VERSION_BUMP_APP_TOKEN }}
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.generate_token.outputs.token }} # Use the generated token
+          fetch-depth: 0
+
+      - name: Install uv and dev dependencies
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          uv sync --only-dev
+
+      - name: Extract version
+        id: extract_version
+        run: |
+          echo "VERSION=$(uv run --no-sync poetry version -s)" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ steps.extract_version.outputs.VERSION }}
+          release_name: v${{ steps.extract_version.outputs.VERSION }}
+          body: "Release v${{ steps.extract_version.outputs.VERSION }}"
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                
