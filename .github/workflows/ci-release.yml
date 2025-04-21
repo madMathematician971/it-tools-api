@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  create_release:
+    name: Create Release and Tag
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.VERSION_BUMP_APP_ID }}
+          private-key: ${{ secrets.VERSION_BUMP_APP_TOKEN }}
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.generate_token.outputs.token }} # Use the generated token
+          fetch-depth: 0
+
+      - name: Install uv and dev dependencies
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          uv sync --only-dev
+
+      - name: Extract version
+        id: extract_version
+        run: |
+          echo "VERSION=$(uv run --no-sync poetry version -s)" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ steps.extract_version.outputs.VERSION }}
+          release_name: v${{ steps.extract_version.outputs.VERSION }}
+          body: "Release v${{ steps.extract_version.outputs.VERSION }}"
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                
+      - name: Create and push release branch
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          git config user.name "${{ secrets.VERSION_BUMP_APP_ID }}[bot]"
+          git config user.email "${{ secrets.VERSION_BUMP_APP_ID }}[bot]@users.noreply.github.com"
+
+          # Create the release branch at the current HEAD (includes merge commit)
+          git checkout -b "release/v${{ steps.extract_version.outputs.VERSION }}"
+
+          # Create an empty commit without [skip ci], so CI on push will run
+          git commit --allow-empty -m "release: v${{ steps.extract_version.outputs.VERSION }}"
+
+          # Push the new HEAD commit to release branch
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git push origin "HEAD:release/v${{ steps.extract_version.outputs.VERSION }}" --follow-tags
