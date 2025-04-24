@@ -175,3 +175,11 @@ cython_debug/
 
 .cursor
 .cursorrules
+
+# macOS specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+.Trashes
+.Spotlight-V100
+.fseventsd

@@ -1,7 +1,7 @@
 [project]
-name = "it-tools-api"
+name = "mcp-it-tools"
 version = "0.1.4"
-description = "API for IT Tools"
+description = "MCP Server for IT Tools"
 authors = [
     { name = "Anton Dmytrenko", email = "48_decorum.row@icloud.com" },
 ]
