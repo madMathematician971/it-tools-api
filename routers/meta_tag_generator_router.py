@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/meta-tag-generator", tags=["Meta Tag Generator"]
 
 
 @router.post("/", response_model=MetaTagOutput)
-async def generate_meta_tags(input_data: MetaTagInput):
+async def generate_meta_tags_router(input_data: MetaTagInput):
     """Generate HTML meta tags based on provided input data using the MCP tool."""
     try:
         result_dict = generate_meta_tags(**input_data.model_dump())

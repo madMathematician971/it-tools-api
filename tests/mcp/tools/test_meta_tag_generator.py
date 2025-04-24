@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from mcp_server.tools.meta_tag_generator import generate_meta_tags_tool
+from mcp_server.tools.meta_tag_generator import generate_meta_tags
 
 # --- Test Data ---
 
@@ -92,7 +92,7 @@ escaping_data = {"title": "Title with <script>", "description": "Desc & stuff"}
 @pytest.mark.asyncio
 async def test_generate_meta_tags_tool_success(input_payload_dict: dict[str, Any], expected_html_substrings: list[str]):
     """Test successful generation of meta tags with various inputs."""
-    result_dict = generate_meta_tags_tool(**input_payload_dict)
+    result_dict = generate_meta_tags(**input_payload_dict)
 
     assert result_dict["error"] is None
 
@@ -174,4 +174,4 @@ async def test_generate_meta_tags_tool_missing_required():
     """Test calling the tool directly with missing required fields."""
     # Direct python call without required args will raise TypeError.
     with pytest.raises(TypeError):
-        generate_meta_tags_tool()  # Missing title and description
+        generate_meta_tags()  # pylint: disable=no-value-for-parameter
