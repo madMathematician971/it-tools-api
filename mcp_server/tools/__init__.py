@@ -33,6 +33,8 @@ from mcp_server.tools.lorem_generator import generate_lorem
 from mcp_server.tools.mac_lookup import lookup_mac_vendor
 from mcp_server.tools.markdown_processor import render_markdown
 from mcp_server.tools.math_evaluator import evaluate_math
+from mcp_server.tools.meta_tag_generator import generate_meta_tags
+from mcp_server.tools.nato_converter import convert_from_nato, convert_to_nato
 from mcp_server.tools.phone_parser import parse_phone_number
 from mcp_server.tools.roman_numeral_converter import decode_from_roman, encode_to_roman
 from mcp_server.tools.uuid_generator import generate_uuid
